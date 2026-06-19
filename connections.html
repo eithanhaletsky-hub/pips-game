@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connections - Word Puzzle Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #faf8f5;
+            --surface: #ffffff;
+            --text: #1a1a1a;
+            --text-muted: #6b6b6b;
+            --border: #e0ddd8;
+            --accent: #4a90d9;
+            --accent-hover: #3a7bc8;
+            --success: #4caf50;
+            --error: #e74c3c;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+            --radius: 12px;
+            --radius-sm: 8px;
+
+            --yellow: #f9df6d;
+            --yellow-text: #5a4a00;
+            --green: #a0c35a;
+            --green-text: #2a3d00;
+            --blue: #b0c4ef;
+            --blue-text: #1a2d5a;
+            --purple: #ba81c5;
+            --purple-text: #3a1a45;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* === Nav Bar === */
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            padding: 10px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .top-nav a {
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 4px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .top-nav a:hover { color: var(--text); }
+        .top-nav a.active {
+            color: var(--text);
+            border-bottom-color: var(--text);
+        }
+
+        /* === Header === */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 20px 8px;
+            text-align: center;
+        }
+        .header-center { text-align: center; }
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        .tagline {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 2px;
+        }
+
+        /* === Game Container === */
+        .game-container {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 12px 16px 32px;
+        }
+
+        /* === Info Bar === */
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .puzzle-num { font-weight: 600; color: var(--text); }
+        .timer { font-variant-numeric: tabular-nums; }
+
+        /* === Solved Groups === */
+        .solved-area {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .solved-group {
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            text-align: center;
+            animation: solvedReveal 0.4s ease-out;
+        }
+        @keyframes solvedReveal {
+            from { opacity: 0; transform: scaleY(0.6); }
+            to { opacity: 1; transform: scaleY(1); }
+        }
+        .solved-group.yellow { background: var(--yellow); color: var(--yellow-text); }
+        .solved-group.green { background: var(--green); color: var(--green-text); }
+        .solved-group.blue { background: var(--blue); color: var(--blue-text); }
+        .solved-group.purple { background: var(--purple); color: var(--purple-text); }
+
+        .solved-category {
+            font-weight: 700;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .solved-words {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* === Grid === */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .tile {
+            aspect-ratio: 1.6 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e8e4df;
+            border: 2px solid transparent;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+            text-align: center;
+            padding: 4px 6px;
+            line-height: 1.2;
+        }
+        .tile:hover {
+            background: #ddd9d3;
+        }
+        .tile.selected {
+            background: var(--text);
+            color: #fff;
+            border-color: var(--text);
+            transform: scale(0.97);
+        }
+        .tile.shake {
+            animation: shake 0.4s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        .tile.pop-out {
+            animation: popOut 0.3s ease forwards;
+        }
+        @keyframes popOut {
+            to { opacity: 0; transform: scale(0.7); }
+        }
+
+        /* === Mistakes === */
+        .mistakes-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .mistake-dots {
+            display: flex;
+            gap: 6px;
+        }
+        .mistake-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--text);
+            transition: all 0.3s ease;
+        }
+        .mistake-dot.used {
+            background: #ccc;
+            transform: scale(0.8);
+        }
+
+        /* === Buttons === */
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 22px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+        }
+        .btn:hover {
+            background: #f0ede8;
+        }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+        .btn.primary {
+            background: var(--text);
+            color: #fff;
+            border-color: var(--text);
+        }
+        .btn.primary:hover {
+            background: #333;
+        }
+        .btn.primary:disabled {
+            background: #999;
+            border-color: #999;
+        }
+
+        /* === Toast === */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--text);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 200;
+            white-space: nowrap;
+        }
+        .toast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* === End Screen === */
+        .end-screen {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .end-screen.show { display: block; }
+        .end-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+        .end-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .results-grid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 16px;
+            font-size: 22px;
+            line-height: 1.4;
+        }
+        .end-btns {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* === How to Play Modal === */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            max-width: 420px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+        .modal h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            margin-bottom: 14px;
+        }
+        .modal p, .modal li {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        .modal ul { padding-left: 20px; }
+        .color-key {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin: 12px 0;
+        }
+        .color-key-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        .color-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+        }
+        .modal-close {
+            display: block;
+            margin: 16px auto 0;
+            padding: 10px 32px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            background: var(--text);
+            color: #fff;
+            border: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .tile { font-size: 11px; }
+            .game-container { padding: 8px 10px 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="top-nav">
+    <a href="index.html">Pips</a>
+    <a href="connections.html" class="active">Connections</a>
+    <a href="kenken.html">KenKen</a>
+</nav>
+
+<!-- Header -->
+<header class="header">
+    <div class="header-center">
+        <h1 class="logo">Connections</h1>
+        <p class="tagline">Group the words that share a common thread</p>
+    </div>
+</header>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Game -->
+<div class="game-container">
+    <div class="info-bar">
+        <span class="puzzle-num" id="puzzleNum">Puzzle #1</span>
+        <span>
+            <button class="btn" id="helpBtn" style="padding:6px 14px;font-size:12px;margin-right:6px;" title="How to Play">?</button>
+            <span class="timer" id="timer">0:00</span>
+        </span>
+    </div>
+
+    <div class="solved-area" id="solvedArea"></div>
+    <div class="grid" id="grid"></div>
+
+    <div class="mistakes-area">
+        <span>Mistakes remaining:</span>
+        <div class="mistake-dots" id="mistakeDots">
+            <div class="mistake-dot"></div>
+            <div class="mistake-dot"></div>
+            <div class="mistake-dot"></div>
+            <div class="mistake-dot"></div>
+        </div>
+    </div>
+
+    <div class="btn-row" id="actionBtns">
+        <button class="btn" id="shuffleBtn">Shuffle</button>
+        <button class="btn" id="deselectBtn">Deselect All</button>
+        <button class="btn primary" id="submitBtn" disabled>Submit</button>
+    </div>
+
+    <div class="end-screen" id="endScreen">
+        <div class="end-title" id="endTitle"></div>
+        <div class="end-subtitle" id="endSubtitle"></div>
+        <div class="results-grid" id="resultsGrid"></div>
+        <div class="end-btns">
+            <button class="btn" id="shareBtn">Share Results</button>
+            <button class="btn primary" id="nextPuzzleBtn">Next Puzzle</button>
+        </div>
+    </div>
+</div>
+
+<!-- How to Play Modal -->
+<div class="modal-overlay" id="helpModal">
+    <div class="modal">
+        <h2>How to Play</h2>
+        <p>Find groups of four items that share something in common.</p>
+        <ul>
+            <li>Select four words and tap <strong>Submit</strong> to check if they form a group.</li>
+            <li>Find all four groups without making 4 mistakes.</li>
+        </ul>
+        <p><strong>Difficulty:</strong></p>
+        <div class="color-key">
+            <div class="color-key-item"><div class="color-swatch" style="background:var(--yellow)"></div> Yellow - Straightforward</div>
+            <div class="color-key-item"><div class="color-swatch" style="background:var(--green)"></div> Green - Moderate</div>
+            <div class="color-key-item"><div class="color-swatch" style="background:var(--blue)"></div> Blue - Tricky</div>
+            <div class="color-key-item"><div class="color-swatch" style="background:var(--purple)"></div> Purple - Devious</div>
+        </div>
+        <p>Each puzzle has exactly one solution. Good luck!</p>
+        <button class="modal-close" id="helpClose">Got it</button>
+    </div>
+</div>
+
+<script>
+// ============ PUZZLE DATA ============
+const PUZZLES = [
+    {
+        groups: [
+            { category: "TYPES OF BREAD", difficulty: 0, words: ["SOURDOUGH","RYE","PUMPERNICKEL","BRIOCHE"] },
+            { category: "PLANETS", difficulty: 1, words: ["MARS","VENUS","SATURN","JUPITER"] },
+            { category: "CARD GAMES", difficulty: 2, words: ["POKER","BRIDGE","SOLITAIRE","RUMMY"] },
+            { category: "___BOARD", difficulty: 3, words: ["SKATE","CARD","KEY","DART"] }
+        ]
+    },
+    {
+        groups: [
+            { category: "FRUITS", difficulty: 0, words: ["MANGO","KIWI","PLUM","FIG"] },
+            { category: "MUSIC GENRES", difficulty: 1, words: ["JAZZ","BLUES","ROCK","POP"] },
+            { category: "TYPES OF DANCE", difficulty: 2, words: ["SALSA","WALTZ","TANGO","SWING"] },
+            { category: "DOUBLE LETTERS", difficulty: 3, words: ["COFFEE","TOFFEE","COMMITTEE","BALLOON"] }
+        ]
+    },
+    {
+        groups: [
+            { category: "COLORS", difficulty: 0, words: ["CRIMSON","IVORY","NAVY","JADE"] },
+            { category: "CHESS PIECES", difficulty: 1, words: ["ROOK","BISHOP","KNIGHT","PAWN"] },
+            { category: "GREEK GODS", difficulty: 2, words: ["ZEUS","APOLLO","HERMES","ARES"] },
+            { category: "ALSO A CAR BRAND", difficulty: 3, words: ["LINCOLN","BENTLEY","FORD","DODGE"] }
+        ]
+    },
+    {
+        groups: [
+            { category: "WEATHER", difficulty: 0, words: ["THUNDER","HAIL","BLIZZARD","DRIZZLE"] },
+            { category: "PASTA SHAPES", difficulty: 1, words: ["PENNE","FUSILLI","RIGATONI","ORZO"] },
+            { category: "DANCES", difficulty: 2, words: ["FOXTROT","MAMBO","RUMBA","CHA-CHA"] },
+            { category: "STARTS WITH A BODY PART", difficulty: 3, words: ["KNEECAP","EYEBROW","THUMBNAIL","EARRING"] }
+        ]
+    },
+    {
+        groups: [
+            { category: "DOGS", difficulty: 0, words: ["POODLE","BEAGLE","HUSKY","CORGI"] },
+            { category: "CURRENCIES", difficulty: 1, words: ["DOLLAR","EURO","POUND","YEN"] },
+            { category: "ELEMENTS", difficulty: 2, words: ["GOLD","SILVER","IRON","COPPER"] },
+            { category: "OLYMPIC SPORTS", difficulty: 3, words: ["FENCING","ROWING","ARCHERY","DIVING"] }
+        ]
+    },
+    {
+        groups: [
+            { category: "TREES", difficulty: 0, words: ["MAPLE","OAK","PINE","BIRCH"] },
+            { category: "SPICES", difficulty: 1, words: ["CUMIN","SAGE","THYME","BASIL"] },
+            { category: "FABRICS", difficulty: 2, words: ["SILK","LINEN","DENIM","VELVET"] },
+            { category: "ALSO A NAME", difficulty: 3, words: ["HAZEL","GRACE","JASMINE","HOLLY"] }
+        ]
+    },
+    {
+        groups: [
+            { category: "BREAKFAST ITEMS", difficulty: 0, words: ["WAFFLE","PANCAKE","OMELETTE","CROISSANT"] },
+            { category: "OCEAN CREATURES", difficulty: 1, words: ["OCTOPUS","DOLPHIN","SEAHORSE","JELLYFISH"] },
+            { category: "BOARD GAMES", difficulty: 2, words: ["MONOPOLY","CLUE","RISK","SCRABBLE"] },
+            { category: "THINGS THAT SPIN", difficulty: 3, words: ["TORNADO","DRYER","RECORD","TURBINE"] }
+        ]
+    },
+    {
+        groups: [
+            { category: "GEMSTONES", difficulty: 0, words: ["RUBY","PEARL","OPAL","TOPAZ"] },
+            { category: "TOOLS", difficulty: 1, words: ["HAMMER","WRENCH","DRILL","PLIERS"] },
+            { category: "FAMOUS SCIENTISTS", difficulty: 2, words: ["DARWIN","NEWTON","TESLA","CURIE"] },
+            { category: "WORDS BEFORE FLY", difficulty: 3, words: ["BUTTER","MAY","FIRE","BAR"] }
+        ]
+    },
+    {
+        groups: [
+            { category: "VEGETABLES", difficulty: 0, words: ["CARROT","CELERY","RADISH","TURNIP"] },
+            { category: "INSTRUMENTS", difficulty: 1, words: ["VIOLIN","CELLO","FLUTE","OBOE"] },
+            { category: "MYTHICAL CREATURES", difficulty: 2, words: ["DRAGON","PHOENIX","GRIFFIN","UNICORN"] },
+            { category: "ANAGRAM OF A NUMBER", difficulty: 3, words: ["ENON","OWTS","VIFE","NITE"] }
+        ]
+    },
+    {
+        groups: [
+            { category: "BAKED GOODS", difficulty: 0, words: ["MUFFIN","SCONE","PRETZEL","BAGEL"] },
+            { category: "SPACE TERMS", difficulty: 1, words: ["COMET","NEBULA","QUASAR","PULSAR"] },
+            { category: "MARTIAL ARTS", difficulty: 2, words: ["JUDO","KARATE","AIKIDO","BOXING"] },
+            { category: "SILENT LETTER", difficulty: 3, words: ["KNIGHT","PSALM","GNOME","WREATH"] }
+        ]
+    }
+];
+
+const DIFF_CLASSES = ["yellow","green","blue","purple"];
+const DIFF_EMOJI = ["🟨","🟩","🟦","🟪"];
+
+// ============ STATE ============
+let currentPuzzle = 0;
+let selected = new Set();
+let mistakes = 0;
+let maxMistakes = 4;
+let solvedGroups = [];
+let remainingWords = [];
+let timerInterval = null;
+let seconds = 0;
+let gameOver = false;
+let guessHistory = []; // for share results
+let previousGuesses = []; // track previous wrong guesses to prevent duplicates
+
+// ============ DOM ============
+const gridEl = document.getElementById("grid");
+const solvedAreaEl = document.getElementById("solvedArea");
+const submitBtn = document.getElementById("submitBtn");
+const shuffleBtn = document.getElementById("shuffleBtn");
+const deselectBtn = document.getElementById("deselectBtn");
+const mistakeDotsEl = document.getElementById("mistakeDots");
+const timerEl = document.getElementById("timer");
+const puzzleNumEl = document.getElementById("puzzleNum");
+const toastEl = document.getElementById("toast");
+const endScreenEl = document.getElementById("endScreen");
+const endTitleEl = document.getElementById("endTitle");
+const endSubtitleEl = document.getElementById("endSubtitle");
+const resultsGridEl = document.getElementById("resultsGrid");
+const shareBtn = document.getElementById("shareBtn");
+const nextPuzzleBtn = document.getElementById("nextPuzzleBtn");
+const helpBtn = document.getElementById("helpBtn");
+const helpModal = document.getElementById("helpModal");
+const helpClose = document.getElementById("helpClose");
+const actionBtnsEl = document.getElementById("actionBtns");
+
+// ============ INIT ============
+function initPuzzle(idx) {
+    currentPuzzle = idx;
+    const puzzle = PUZZLES[idx];
+    selected.clear();
+    mistakes = 0;
+    solvedGroups = [];
+    gameOver = false;
+    guessHistory = [];
+    previousGuesses = [];
+    seconds = 0;
+
+    // Collect all words
+    remainingWords = [];
+    puzzle.groups.forEach(g => {
+        g.words.forEach(w => remainingWords.push(w));
+    });
+    shuffle(remainingWords);
+
+    // Reset UI
+    puzzleNumEl.textContent = `Puzzle #${idx + 1}`;
+    solvedAreaEl.innerHTML = "";
+    endScreenEl.classList.remove("show");
+    actionBtnsEl.style.display = "flex";
+    updateMistakeDots();
+    renderGrid();
+    updateSubmitBtn();
+    startTimer();
+}
+
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+// ============ RENDER ============
+function renderGrid() {
+    gridEl.innerHTML = "";
+    remainingWords.forEach(word => {
+        const tile = document.createElement("div");
+        tile.className = "tile" + (selected.has(word) ? " selected" : "");
+        tile.textContent = word;
+        tile.addEventListener("click", () => toggleSelect(word));
+        gridEl.appendChild(tile);
+    });
+}
+
+function toggleSelect(word) {
+    if (gameOver) return;
+    if (selected.has(word)) {
+        selected.delete(word);
+    } else {
+        if (selected.size >= 4) return;
+        selected.add(word);
+    }
+    renderGrid();
+    updateSubmitBtn();
+}
+
+function updateSubmitBtn() {
+    submitBtn.disabled = selected.size !== 4;
+}
+
+function updateMistakeDots() {
+    const dots = mistakeDotsEl.querySelectorAll(".mistake-dot");
+    dots.forEach((dot, i) => {
+        dot.classList.toggle("used", i >= (maxMistakes - mistakes));
+    });
+}
+
+// ============ SUBMIT ============
+submitBtn.addEventListener("click", () => {
+    if (selected.size !== 4 || gameOver) return;
+
+    const guess = Array.from(selected);
+    const guessKey = [...guess].sort().join(",");
+
+    // Check if already guessed
+    if (previousGuesses.includes(guessKey)) {
+        showToast("Already guessed!");
+        return;
+    }
+    previousGuesses.push(guessKey);
+
+    const puzzle = PUZZLES[currentPuzzle];
+
+    // Find best matching group
+    let bestMatch = null;
+    let bestCount = 0;
+    puzzle.groups.forEach(g => {
+        if (solvedGroups.includes(g)) return;
+        const count = guess.filter(w => g.words.includes(w)).length;
+        if (count > bestCount) {
+            bestCount = count;
+            bestMatch = g;
+        }
+    });
+
+    if (bestCount === 4) {
+        // Correct!
+        solvedGroups.push(bestMatch);
+        guessHistory.push({ group: bestMatch, correct: true });
+
+        // Animate tiles out then reveal
+        const tiles = gridEl.querySelectorAll(".tile");
+        tiles.forEach(t => {
+            if (guess.includes(t.textContent)) {
+                t.classList.add("pop-out");
+            }
+        });
+
+        setTimeout(() => {
+            remainingWords = remainingWords.filter(w => !guess.includes(w));
+            selected.clear();
+            addSolvedBanner(bestMatch);
+            renderGrid();
+            updateSubmitBtn();
+
+            if (solvedGroups.length === 4) {
+                endGame(true);
+            }
+        }, 350);
+    } else {
+        // Wrong guess
+        mistakes++;
+        guessHistory.push({ guess: guess, correct: false, bestMatch: bestMatch, bestCount: bestCount });
+        updateMistakeDots();
+
+        // Show feedback
+        if (bestCount === 3) {
+            showToast("One away!");
+        } else {
+            showToast("Try again...");
+        }
+
+        // Shake selected tiles
+        const tiles = gridEl.querySelectorAll(".tile.selected");
+        tiles.forEach(t => {
+            t.classList.add("shake");
+            setTimeout(() => t.classList.remove("shake"), 500);
+        });
+
+        if (mistakes >= maxMistakes) {
+            // Reveal all remaining groups
+            setTimeout(() => {
+                revealAll();
+                endGame(false);
+            }, 800);
+        }
+    }
+});
+
+function addSolvedBanner(group) {
+    const div = document.createElement("div");
+    div.className = `solved-group ${DIFF_CLASSES[group.difficulty]}`;
+    div.innerHTML = `
+        <div class="solved-category">${group.category}</div>
+        <div class="solved-words">${group.words.join(", ")}</div>
+    `;
+    solvedAreaEl.appendChild(div);
+}
+
+function revealAll() {
+    const puzzle = PUZZLES[currentPuzzle];
+    puzzle.groups.forEach(g => {
+        if (!solvedGroups.includes(g)) {
+            solvedGroups.push(g);
+            addSolvedBanner(g);
+        }
+    });
+    remainingWords = [];
+    gridEl.innerHTML = "";
+    selected.clear();
+}
+
+// ============ END GAME ============
+function endGame(won) {
+    gameOver = true;
+    stopTimer();
+    actionBtnsEl.style.display = "none";
+
+    endTitleEl.textContent = won ? "Well done!" : "Better luck next time";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    endSubtitleEl.textContent = won
+        ? `Solved in ${mins}:${secs.toString().padStart(2,"0")} with ${mistakes} mistake${mistakes !== 1 ? "s" : ""}`
+        : `${solvedGroups.length - (4 - PUZZLES[currentPuzzle].groups.filter(g => guessHistory.some(h => h.correct && h.group === g)).length)} groups found`;
+
+    // Build results emoji grid
+    buildResultsEmoji();
+
+    endScreenEl.classList.add("show");
+}
+
+function buildResultsEmoji() {
+    resultsGridEl.innerHTML = "";
+    const puzzle = PUZZLES[currentPuzzle];
+
+    guessHistory.forEach(entry => {
+        const row = document.createElement("div");
+        if (entry.correct) {
+            const emoji = DIFF_EMOJI[entry.group.difficulty];
+            row.textContent = emoji + emoji + emoji + emoji;
+        } else {
+            // For wrong guesses, show the difficulty of each selected word
+            let emojis = "";
+            entry.guess.forEach(word => {
+                const g = puzzle.groups.find(gr => gr.words.includes(word));
+                emojis += DIFF_EMOJI[g.difficulty];
+            });
+            row.textContent = emojis;
+        }
+        resultsGridEl.appendChild(row);
+    });
+
+    // Also show auto-solved groups at the end (the ones revealed after losing)
+    if (mistakes >= maxMistakes) {
+        puzzle.groups.forEach(g => {
+            if (!guessHistory.some(h => h.correct && h.group === g)) {
+                // This group was auto-revealed, don't add emoji row for it
+            }
+        });
+    }
+}
+
+// ============ SHARE ============
+shareBtn.addEventListener("click", () => {
+    const puzzle = PUZZLES[currentPuzzle];
+    let text = `Connections Puzzle #${currentPuzzle + 1}\n`;
+
+    guessHistory.forEach(entry => {
+        if (entry.correct) {
+            const emoji = DIFF_EMOJI[entry.group.difficulty];
+            text += emoji + emoji + emoji + emoji + "\n";
+        } else {
+            entry.guess.forEach(word => {
+                const g = puzzle.groups.find(gr => gr.words.includes(word));
+                text += DIFF_EMOJI[g.difficulty];
+            });
+            text += "\n";
+        }
+    });
+
+    navigator.clipboard.writeText(text.trim()).then(() => {
+        showToast("Copied to clipboard!");
+    }).catch(() => {
+        showToast("Could not copy");
+    });
+});
+
+// ============ BUTTONS ============
+shuffleBtn.addEventListener("click", () => {
+    if (gameOver) return;
+    shuffle(remainingWords);
+    renderGrid();
+});
+
+deselectBtn.addEventListener("click", () => {
+    selected.clear();
+    renderGrid();
+    updateSubmitBtn();
+});
+
+nextPuzzleBtn.addEventListener("click", () => {
+    const next = (currentPuzzle + 1) % PUZZLES.length;
+    initPuzzle(next);
+});
+
+// ============ TIMER ============
+function startTimer() {
+    stopTimer();
+    seconds = 0;
+    timerEl.textContent = "0:00";
+    timerInterval = setInterval(() => {
+        seconds++;
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        timerEl.textContent = `${m}:${s.toString().padStart(2, "0")}`;
+    }, 1000);
+}
+
+function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+// ============ TOAST ============
+function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("visible");
+    setTimeout(() => toastEl.classList.remove("visible"), 1800);
+}
+
+// ============ HELP MODAL ============
+helpBtn.addEventListener("click", () => helpModal.classList.add("show"));
+helpClose.addEventListener("click", () => helpModal.classList.remove("show"));
+helpModal.addEventListener("click", (e) => {
+    if (e.target === helpModal) helpModal.classList.remove("show");
+});
+
+// ============ START ============
+initPuzzle(0);
+</script>
+</body>
+</html>

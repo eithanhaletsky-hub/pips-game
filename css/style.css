@@ -1,6 +1,30 @@
 /* === Reset & Base === */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* === Game Navigation === */
+.game-nav {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    background: #1a1a1a;
+    padding: 0;
+}
+
+.game-nav-link {
+    color: #999;
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 24px;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.game-nav-link:hover { color: #fff; }
+.game-nav-link.active { color: #fff; border-bottom-color: #4a90d9; }
+
 :root {
     --bg: #faf8f5;
     --surface: #ffffff;
