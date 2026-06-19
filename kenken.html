@@ -1,1290 +1,570 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KenKen - Math Puzzle Game</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <title>קנקן - פאזל מתמטי</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #faf8f5; --surface: #ffffff; --text: #1a1a1a;
+            --text-secondary: #6b6b6b; --accent: #4a90d9; --border: #e0ddd8;
+            --error: #e74c3c; --success: #27ae60;
+        }
+        body { font-family: 'Rubik', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-:root {
-    --bg: #faf8f5;
-    --surface: #ffffff;
-    --text: #1a1a1a;
-    --text-muted: #6b6b6b;
-    --border: #e0ddd8;
-    --accent: #4a90d9;
-    --accent-hover: #3a7bc8;
-    --accent-light: #e8f0fb;
-    --success: #4caf50;
-    --error: #e74c3c;
-    --gold: #f0c040;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
-    --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
-    --radius: 12px;
-    --radius-sm: 8px;
-    --cage-border: #1a1a1a;
-    --cell-border: #d0cdc8;
-    --highlight-row: #f0edfa;
-    --highlight-selected: #d4e6f9;
-    --error-bg: #fde8e8;
-}
+        .game-nav { display: flex; justify-content: center; background: #1a1a1a; direction: ltr; }
+        .game-nav-link { color: #999; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px 24px; letter-spacing: 0.5px; transition: all 0.2s; border-bottom: 2px solid transparent; font-family: 'Rubik', sans-serif; }
+        .game-nav-link:hover { color: #fff; }
+        .game-nav-link.active { color: #fff; border-bottom-color: #4a90d9; }
 
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-}
+        .container { max-width: 560px; margin: 0 auto; padding: 16px; }
+        header { text-align: center; padding: 20px 0 10px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+        header h1 { font-size: 36px; font-weight: 800; }
+        header p { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
 
-/* === Nav Bar === */
-.navbar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 32px;
-    padding: 10px 20px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-    font-weight: 500;
-}
-.navbar a {
-    text-decoration: none;
-    color: var(--text-muted);
-    padding: 4px 12px;
-    border-radius: 6px;
-    transition: all 0.2s;
-}
-.navbar a:hover { color: var(--text); background: #f0ede8; }
-.navbar a.active { color: var(--accent); font-weight: 600; }
+        .home-screen { text-align: center; }
+        .home-screen.hidden { display: none; }
+        .age-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+        .age-card {
+            background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+            padding: 20px 12px; cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .age-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .age-card .age-icon { font-size: 32px; margin-bottom: 8px; }
+        .age-card h3 { font-size: 18px; margin-bottom: 4px; }
+        .age-card p { color: var(--text-secondary); font-size: 12px; }
+        .age-card .count { font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 8px; }
 
-/* === Header === */
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-.header-center { text-align: center; }
-.logo {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: 2px;
-}
-.tagline {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-top: -2px;
-}
-.header-left, .header-right { display: flex; gap: 8px; }
-.btn-icon {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    transition: background 0.2s;
-}
-.btn-icon:hover { background: #f0ede8; }
+        .stage-screen { display: none; }
+        .stage-screen.active { display: block; }
+        .stage-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .back-btn { background: none; border: none; font-size: 16px; cursor: pointer; font-family: 'Rubik', sans-serif; font-weight: 600; color: var(--text); }
+        .back-btn:hover { color: var(--accent); }
+        .stages-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+        .stage-btn {
+            aspect-ratio: 1; border-radius: 10px; border: 2px solid var(--border); background: var(--surface);
+            font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'Rubik', sans-serif;
+        }
+        .stage-btn:hover { border-color: var(--accent); }
+        .stage-btn.solved { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
 
-/* === Screens === */
-.screen { display: none; max-width: 600px; margin: 0 auto; padding: 20px; }
-.screen.active { display: block; }
+        .game-screen { display: none; }
+        .game-screen.active { display: block; }
 
-/* === Home Screen === */
-.home-hero { text-align: center; padding: 30px 0 20px; }
-.hero-icon {
-    font-size: 56px;
-    margin-bottom: 12px;
-    display: block;
-}
-.home-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 1.3;
-    margin-bottom: 8px;
-}
-.home-subtitle {
-    font-size: 14px;
-    color: var(--text-muted);
-    line-height: 1.5;
-    max-width: 360px;
-    margin: 0 auto;
-}
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .toolbar-right { display: flex; align-items: center; gap: 12px; }
+        .timer { font-variant-numeric: tabular-nums; color: var(--text-secondary); font-size: 14px; direction: ltr; }
+        .puzzle-info { font-weight: 600; font-size: 14px; }
 
-.section-title {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--text-muted);
-    margin-bottom: 12px;
-    text-align: center;
-}
+        .toggle-group { display: flex; gap: 4px; direction: ltr; }
+        .toggle-btn {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+            padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+            font-family: 'Rubik', sans-serif; transition: all 0.15s;
+        }
+        .toggle-btn.active { background: var(--text); color: white; border-color: var(--text); }
 
-.difficulty-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-.difficulty-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: left;
-    width: 100%;
-}
-.difficulty-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); }
-.diff-icon {
-    font-size: 10px;
-    color: var(--accent);
-    min-width: 50px;
-    letter-spacing: 2px;
-}
-.diff-info { flex: 1; }
-.diff-name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
-.diff-desc { font-size: 12px; color: var(--text-muted); }
-.diff-right { text-align: right; min-width: 60px; }
-.diff-progress {
-    width: 60px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-bottom: 4px;
-}
-.progress-fill {
-    display: block;
-    height: 100%;
-    background: var(--accent);
-    border-radius: 2px;
-    transition: width 0.3s;
-}
-.diff-count { font-size: 11px; color: var(--text-muted); }
+        .grid-wrapper { display: flex; justify-content: center; margin: 16px 0; direction: ltr; }
+        .kenken-grid { display: inline-grid; border: 3px solid var(--text); background: var(--text); gap: 0; }
+        .kk-cell {
+            background: var(--surface); position: relative; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 700; transition: background 0.1s;
+            border: 1px solid #ccc; width: 60px; height: 60px;
+        }
+        .kk-cell.selected { background: #d4e6f9; }
+        .kk-cell.highlight { background: #eef3fa; }
+        .kk-cell.error { background: #fde8e8; }
+        .kk-cell .cage-label {
+            position: absolute; top: 2px; left: 4px;
+            font-size: 11px; font-weight: 700; color: var(--text);
+            pointer-events: none; line-height: 1; direction: ltr;
+        }
+        .kk-cell .pencil-marks {
+            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+            position: absolute; inset: 14px 4px 4px 4px; pointer-events: none;
+        }
+        .kk-cell .pencil-marks span {
+            font-size: 9px; font-weight: 600; color: var(--text-secondary);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .kk-cell .value { pointer-events: none; z-index: 1; }
+        .cage-top { border-top: 3px solid var(--text) !important; }
+        .cage-right { border-right: 3px solid var(--text) !important; }
+        .cage-bottom { border-bottom: 3px solid var(--text) !important; }
+        .cage-left { border-left: 3px solid var(--text) !important; }
 
-/* === Puzzle Selector === */
-.puzzle-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
-.puzzle-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.puzzle-item:hover { border-color: var(--accent); }
-.puzzle-item .puzzle-label { font-weight: 500; font-size: 14px; }
-.puzzle-item .puzzle-status { font-size: 12px; color: var(--text-muted); }
-.puzzle-item .puzzle-status.solved { color: var(--success); font-weight: 600; }
-.puzzle-item .puzzle-time { font-size: 12px; color: var(--text-muted); }
-.back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    color: var(--text-muted);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px 0;
-    margin-bottom: 12px;
-}
-.back-btn:hover { color: var(--text); }
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 12px; }
+        .num-pad { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; direction: ltr; }
+        .num-btn {
+            width: 44px; height: 44px; border-radius: 8px; border: 2px solid var(--border);
+            background: var(--surface); font-size: 18px; font-weight: 700; cursor: pointer;
+            font-family: 'Rubik', sans-serif; transition: all 0.15s;
+        }
+        .num-btn:hover { border-color: var(--accent); background: #f0f4fa; }
 
-/* === Game Screen === */
-.game-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-    gap: 8px;
-}
-.timer {
-    font-size: 16px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--text);
-    min-width: 60px;
-}
-.toolbar-buttons { display: flex; gap: 6px; }
-.tool-btn {
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: var(--text);
-    white-space: nowrap;
-}
-.tool-btn:hover { border-color: var(--accent); color: var(--accent); }
-.tool-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .action-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .act-btn {
+            padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: 'Rubik', sans-serif; transition: all 0.15s;
+        }
+        .act-btn:hover { border-color: var(--accent); }
+        .act-btn.primary { background: var(--text); color: white; border-color: var(--text); }
 
-/* === KenKen Grid === */
-.grid-wrapper {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-.kenken-grid {
-    display: grid;
-    background: var(--surface);
-    border: 2.5px solid var(--cage-border);
-    border-radius: 4px;
-    box-shadow: var(--shadow-md);
-    position: relative;
-    user-select: none;
-}
-.kenken-cell {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.15s;
-    background: var(--surface);
-    border: 0.5px solid var(--cell-border);
-}
-.kenken-cell:hover { background: #f5f3f0; }
-.kenken-cell.selected { background: var(--highlight-selected) !important; }
-.kenken-cell.highlighted { background: var(--highlight-row) !important; }
-.kenken-cell.error-cell { background: var(--error-bg) !important; }
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 100; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--surface); border-radius: 16px; padding: 32px;
+            text-align: center; max-width: 380px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+        .modal p { color: var(--text-secondary); margin-bottom: 16px; }
+        .modal-btns { display: flex; gap: 8px; justify-content: center; }
+        .modal-btn {
+            padding: 12px 24px; border-radius: 24px; font-size: 14px; font-weight: 600;
+            cursor: pointer; border: 2px solid var(--text); font-family: 'Rubik', sans-serif;
+        }
+        .modal-btn.primary { background: var(--text); color: white; }
+        .modal-btn.outline { background: transparent; }
 
-/* Cage borders */
-.kenken-cell.cage-top { border-top: 2.5px solid var(--cage-border) !important; }
-.kenken-cell.cage-bottom { border-bottom: 2.5px solid var(--cage-border) !important; }
-.kenken-cell.cage-left { border-left: 2.5px solid var(--cage-border) !important; }
-.kenken-cell.cage-right { border-right: 2.5px solid var(--cage-border) !important; }
-
-.cage-label {
-    position: absolute;
-    top: 2px;
-    left: 4px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text);
-    pointer-events: none;
-    z-index: 2;
-    line-height: 1;
-}
-.cell-value {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--text);
-    z-index: 1;
-}
-.cell-value.user-input { color: var(--accent); }
-.cell-value.error-val { color: var(--error); }
-
-/* Pencil marks */
-.pencil-marks {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    position: absolute;
-    inset: 14px 2px 2px 2px;
-    z-index: 1;
-    pointer-events: none;
-}
-.pencil-mark {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 9px;
-    font-weight: 500;
-    color: var(--text-muted);
-    line-height: 1;
-}
-
-/* === Number Pad === */
-.numpad {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-}
-.num-btn {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 600;
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all 0.15s;
-    color: var(--text);
-}
-.num-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
-.num-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-.action-row {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-.action-btn {
-    padding: 8px 18px;
-    font-size: 13px;
-    font-weight: 500;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all 0.2s;
-    color: var(--text);
-}
-.action-btn:hover { border-color: var(--accent); color: var(--accent); }
-.action-btn.danger:hover { border-color: var(--error); color: var(--error); }
-
-/* === Win Overlay === */
-.win-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.3s;
-}
-.win-overlay.active { display: flex; }
-.win-modal {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 40px;
-    text-align: center;
-    max-width: 360px;
-    width: 90%;
-    box-shadow: var(--shadow-lg);
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.win-icon { font-size: 48px; margin-bottom: 16px; }
-.win-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-.win-time { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
-.win-btn {
-    padding: 12px 32px;
-    font-size: 14px;
-    font-weight: 600;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background 0.2s;
-    margin: 4px;
-}
-.win-btn:hover { background: var(--accent-hover); }
-.win-btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-.win-btn.secondary:hover { background: var(--accent-light); }
-
-/* === How to Play === */
-.modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 999;
-    align-items: center;
-    justify-content: center;
-}
-.modal-overlay.active { display: flex; }
-.modal {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 32px;
-    max-width: 440px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: var(--shadow-lg);
-}
-.modal h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    margin-bottom: 16px;
-}
-.modal p, .modal li {
-    font-size: 14px;
-    color: var(--text-muted);
-    line-height: 1.7;
-    margin-bottom: 8px;
-}
-.modal ul { padding-left: 20px; margin-bottom: 12px; }
-.modal-close {
-    display: block;
-    margin: 16px auto 0;
-    padding: 10px 28px;
-    font-size: 14px;
-    font-weight: 600;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-}
-
-/* === Confetti === */
-.confetti-piece {
-    position: fixed;
-    width: 10px;
-    height: 10px;
-    z-index: 1001;
-    pointer-events: none;
-}
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-@keyframes confettiFall {
-    0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-}
-
-/* Responsive */
-@media (max-width: 480px) {
-    .kenken-cell { }
-    .cell-value { font-size: 20px; }
-    .cage-label { font-size: 9px; }
-    .pencil-mark { font-size: 7px; }
-    .num-btn { width: 38px; height: 38px; font-size: 16px; }
-    .navbar { gap: 16px; font-size: 13px; }
-}
-</style>
+        .confetti { position: fixed; top: -10px; font-size: 24px; animation: fall linear forwards; pointer-events: none; z-index: 200; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+    </style>
 </head>
 <body>
+    <nav class="game-nav">
+        <a href="index.html" class="game-nav-link">Pips</a>
+        <a href="connections.html" class="game-nav-link">חיבורים</a>
+        <a href="kenken.html" class="game-nav-link active">קנקן</a>
+    </nav>
 
-<!-- Navigation Bar -->
-<nav class="navbar">
-    <a href="index.html">Pips</a>
-    <a href="connections.html">Connections</a>
-    <a href="kenken.html" class="active">KenKen</a>
-</nav>
+    <div class="container">
+        <header>
+            <h1>קנקן</h1>
+            <p>מלאו את הלוח — כל שורה ועמודה ייחודית</p>
+        </header>
 
-<!-- Header -->
-<header class="header">
-    <div class="header-left">
-        <button class="btn-icon" id="homeBtn" title="Home">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-        </button>
-    </div>
-    <div class="header-center">
-        <h1 class="logo">KenKen</h1>
-        <p class="tagline">A Math Puzzle</p>
-    </div>
-    <div class="header-right">
-        <button class="btn-icon" id="helpBtn" title="How to Play">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-        </button>
-    </div>
-</header>
+        <div class="home-screen" id="homeScreen">
+            <div class="age-cards" id="ageCards"></div>
+        </div>
 
-<!-- Home Screen -->
-<div id="homeScreen" class="screen active">
-    <div class="home-hero">
-        <span class="hero-icon">&#x1f9e9;</span>
-        <h2 class="home-title">Cage the numbers.<br>Solve the math.</h2>
-        <p class="home-subtitle">Fill the grid so every row and column has unique numbers, and every cage hits its target.</p>
-    </div>
-    <div class="difficulty-selector">
-        <h3 class="section-title">Choose Difficulty</h3>
-        <div class="difficulty-cards" id="difficultyCards"></div>
-    </div>
-</div>
+        <div class="stage-screen" id="stageScreen">
+            <div class="stage-header">
+                <button class="back-btn" id="backToHome">→ חזרה</button>
+                <span id="stageTitle" style="font-weight:700;"></span>
+            </div>
+            <div class="stages-grid" id="stagesGrid"></div>
+        </div>
 
-<!-- Puzzle Select Screen -->
-<div id="selectScreen" class="screen">
-    <button class="back-btn" id="backToHome">&#8592; Back</button>
-    <h3 class="section-title" id="selectTitle">Select Puzzle</h3>
-    <div class="puzzle-list" id="puzzleList"></div>
-</div>
-
-<!-- Game Screen -->
-<div id="gameScreen" class="screen">
-    <button class="back-btn" id="backToSelect">&#8592; Back</button>
-    <div class="game-toolbar">
-        <div class="timer" id="timer">0:00</div>
-        <div class="toolbar-buttons">
-            <button class="tool-btn" id="pencilBtn">Pencil</button>
-            <button class="tool-btn" id="errorsBtn">Errors</button>
+        <div class="game-screen" id="gameScreen">
+            <div class="toolbar">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="back-btn" id="backBtn">→ חזרה</button>
+                    <span class="puzzle-info" id="puzzleInfo"></span>
+                </div>
+                <div class="toolbar-right">
+                    <span class="timer" id="timer">0:00</span>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" id="normalBtn">רגיל</button>
+                        <button class="toggle-btn" id="pencilBtn">עפרון</button>
+                    </div>
+                </div>
+            </div>
+            <div class="grid-wrapper">
+                <div class="kenken-grid" id="grid"></div>
+            </div>
+            <div class="controls">
+                <div class="num-pad" id="numPad"></div>
+                <div class="action-btns">
+                    <button class="act-btn" id="eraseBtn">מחיקה</button>
+                    <button class="act-btn" id="clearAllBtn">נקה הכל</button>
+                    <button class="act-btn" id="checkBtn">בדיקה</button>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="grid-wrapper">
-        <div class="kenken-grid" id="grid"></div>
-    </div>
-    <div class="numpad" id="numpad"></div>
-    <div class="action-row">
-        <button class="action-btn" id="clearCellBtn">Clear Cell</button>
-        <button class="action-btn danger" id="clearAllBtn">Clear All</button>
-    </div>
-</div>
 
-<!-- Win Overlay -->
-<div class="win-overlay" id="winOverlay">
-    <div class="win-modal">
-        <div class="win-icon">&#127942;</div>
-        <div class="win-title">Puzzle Complete!</div>
-        <div class="win-time" id="winTime">Solved in 0:00</div>
-        <button class="win-btn" id="nextPuzzleBtn">Next Puzzle</button>
-        <button class="win-btn secondary" id="winHomeBtn">Home</button>
+    <div class="modal-overlay" id="winModal">
+        <div class="modal">
+            <h2>🎉 פתרת!</h2>
+            <p id="winMsg"></p>
+            <div class="modal-btns">
+                <button class="modal-btn outline" id="winBackBtn">תפריט</button>
+                <button class="modal-btn primary" id="winNextBtn">שלב הבא</button>
+            </div>
+        </div>
     </div>
-</div>
 
-<!-- How to Play Modal -->
-<div class="modal-overlay" id="helpModal">
-    <div class="modal">
-        <h2>How to Play KenKen</h2>
-        <p><strong>Goal:</strong> Fill the grid with numbers so that:</p>
-        <ul>
-            <li>Each row contains unique numbers from 1 to N (grid size)</li>
-            <li>Each column contains unique numbers from 1 to N</li>
-            <li>Numbers in each cage (thick-bordered group) combine using the shown operation to produce the target number</li>
-        </ul>
-        <p><strong>Cage Labels:</strong></p>
-        <ul>
-            <li><strong>12+</strong> means the numbers in that cage add up to 12</li>
-            <li><strong>3-</strong> means the difference between the numbers is 3</li>
-            <li><strong>12&times;</strong> means the numbers multiply to 12</li>
-            <li><strong>2&divide;</strong> means one number divided by the other is 2</li>
-            <li>A single number with no operation is a given (freebie)</li>
-        </ul>
-        <p><strong>Controls:</strong></p>
-        <ul>
-            <li>Click a cell and type a number (or use the number pad)</li>
-            <li>Toggle <strong>Pencil</strong> mode for small candidate notes</li>
-            <li>Toggle <strong>Errors</strong> to highlight mistakes</li>
-        </ul>
-        <button class="modal-close" id="closeHelp">Got it!</button>
-    </div>
-</div>
-
-<script>
-(function() {
-    'use strict';
-
-    // ===== PUZZLE DATA =====
-    const DIFFICULTIES = [
-        { key: 'easy', name: 'Easy', desc: '3x3 grid', size: 3, count: 3, dots: 1 },
-        { key: 'medium', name: 'Medium', desc: '4x4 grid', size: 4, count: 3, dots: 2 },
-        { key: 'hard', name: 'Hard', desc: '5x5 grid', size: 5, count: 3, dots: 3 },
-        { key: 'expert', name: 'Expert', desc: '6x6 grid', size: 6, count: 3, dots: 4 },
+    <script>
+    const AGE_GROUPS = [
+        { id: 'age7', label: 'גיל 7+', icon: '🧒', desc: 'לוחות 3×3, חיבור בלבד', gridSize: 3, count: 8 },
+        { id: 'age10', label: 'גיל 10+', icon: '🧑', desc: 'לוחות 4×4, חיבור וחיסור', gridSize: 4, count: 8 },
+        { id: 'age13', label: 'גיל 13+', icon: '🧑‍🎓', desc: 'לוחות 5×5, כל הפעולות', gridSize: 5, count: 8 },
+        { id: 'age16', label: 'גיל 16+', icon: '🎓', desc: 'לוחות 6×6, אתגר מקסימלי', gridSize: 6, count: 8 }
     ];
 
-    // Hardcoded 3x3 puzzles
-    const PUZZLES_3 = [
-        {
-            solution: [[2,1,3],[3,2,1],[1,3,2]],
-            cages: [
-                {cells:[[0,0],[0,1]], target:3, op:"+"},
-                {cells:[[0,2],[1,2]], target:4, op:"+"},
-                {cells:[[1,0],[1,1]], target:5, op:"+"},
-                {cells:[[2,0]], target:1, op:""},
-                {cells:[[2,1],[2,2]], target:5, op:"+"}
-            ]
-        },
-        {
-            solution: [[1,3,2],[3,2,1],[2,1,3]],
-            cages: [
-                {cells:[[0,0],[1,0]], target:4, op:"+"},
-                {cells:[[0,1],[0,2]], target:5, op:"+"},
-                {cells:[[1,1],[1,2]], target:3, op:"+"},
-                {cells:[[2,0],[2,1]], target:3, op:"+"},
-                {cells:[[2,2]], target:3, op:""}
-            ]
-        },
-        {
-            solution: [[3,1,2],[1,2,3],[2,3,1]],
-            cages: [
-                {cells:[[0,0],[0,1]], target:2, op:"-"},
-                {cells:[[0,2],[1,2]], target:5, op:"+"},
-                {cells:[[1,0],[2,0]], target:3, op:"+"},
-                {cells:[[1,1],[2,1]], target:5, op:"+"},
-                {cells:[[2,2]], target:1, op:""}
-            ]
-        }
-    ];
+    let currentAge = null, currentIndex = 0, puzzle = null;
+    let userGrid = [], pencilMarks = [], selectedCell = null;
+    let pencilMode = false, checkErrors = false;
+    let timerInterval, startTime;
 
-    // Hardcoded 4x4 puzzles
-    const PUZZLES_4 = [
-        {
-            solution: [[2,4,1,3],[4,3,2,1],[1,2,3,4],[3,1,4,2]],
-            cages: [
-                {cells:[[0,0],[0,1]], target:6, op:"+"},
-                {cells:[[0,2],[0,3]], target:4, op:"+"},
-                {cells:[[1,0],[1,1]], target:7, op:"+"},
-                {cells:[[1,2],[2,2]], target:5, op:"+"},
-                {cells:[[1,3],[2,3]], target:5, op:"+"},
-                {cells:[[2,0],[2,1]], target:3, op:"+"},
-                {cells:[[3,0],[3,1]], target:4, op:"+"},
-                {cells:[[3,2],[3,3]], target:6, op:"+"}
-            ]
-        },
-        {
-            solution: [[3,1,4,2],[4,2,1,3],[1,3,2,4],[2,4,3,1]],
-            cages: [
-                {cells:[[0,0],[1,0]], target:7, op:"+"},
-                {cells:[[0,1],[0,2]], target:5, op:"+"},
-                {cells:[[0,3],[1,3]], target:5, op:"+"},
-                {cells:[[1,1],[1,2]], target:3, op:"+"},
-                {cells:[[2,0],[2,1]], target:4, op:"+"},
-                {cells:[[2,2],[3,2]], target:5, op:"+"},
-                {cells:[[2,3],[3,3]], target:5, op:"+"},
-                {cells:[[3,0],[3,1]], target:6, op:"+"}
-            ]
-        },
-        {
-            solution: [[1,3,2,4],[4,2,3,1],[3,4,1,2],[2,1,4,3]],
-            cages: [
-                {cells:[[0,0],[0,1]], target:3, op:"-"},
-                {cells:[[0,2],[0,3]], target:6, op:"+"},
-                {cells:[[1,0],[1,1]], target:2, op:"-"},
-                {cells:[[1,2],[1,3]], target:4, op:"+"},
-                {cells:[[2,0],[3,0]], target:5, op:"+"},
-                {cells:[[2,1],[3,1]], target:5, op:"+"},
-                {cells:[[2,2],[2,3]], target:3, op:"+"},
-                {cells:[[3,2],[3,3]], target:7, op:"+"}
-            ]
-        }
-    ];
-
-    // ===== SEEDED RANDOM =====
-    function mulberry32(a) {
-        return function() {
-            a |= 0; a = a + 0x6D2B79F5 | 0;
-            let t = Math.imul(a ^ a >>> 15, 1 | a);
-            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-            return ((t ^ t >>> 14) >>> 0) / 4294967296;
-        };
+    function seededRandom(seed) {
+        let s = seed;
+        return function() { s = (s * 1103515245 + 12345) & 0x7fffffff; return (s >>> 0) / 0x7fffffff; };
     }
 
-    // ===== LATIN SQUARE GENERATOR =====
-    function generateLatinSquare(n, rng) {
-        // Start with a simple cyclic latin square, then shuffle rows and columns
-        let grid = [];
-        for (let r = 0; r < n; r++) {
-            grid[r] = [];
-            for (let c = 0; c < n; c++) {
-                grid[r][c] = ((r + c) % n) + 1;
-            }
-        }
-        // Shuffle rows
-        for (let i = n - 1; i > 0; i--) {
+    function shuffleArr(arr, rng) {
+        for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(rng() * (i + 1));
-            [grid[i], grid[j]] = [grid[j], grid[i]];
+            [arr[i], arr[j]] = [arr[j], arr[i]];
         }
-        // Shuffle columns
-        for (let i = n - 1; i > 0; i--) {
-            const j = Math.floor(rng() * (i + 1));
-            for (let r = 0; r < n; r++) {
-                [grid[r][i], grid[r][j]] = [grid[r][j], grid[r][i]];
-            }
-        }
-        // Shuffle values (relabel)
-        let perm = [];
-        for (let i = 1; i <= n; i++) perm.push(i);
-        for (let i = perm.length - 1; i > 0; i--) {
-            const j = Math.floor(rng() * (i + 1));
-            [perm[i], perm[j]] = [perm[j], perm[i]];
-        }
-        for (let r = 0; r < n; r++) {
-            for (let c = 0; c < n; c++) {
-                grid[r][c] = perm[grid[r][c] - 1];
-            }
+    }
+
+    function generateLatinSquare(n, seed) {
+        const rng = seededRandom(seed);
+        const grid = [];
+        for (let i = 0; i < n; i++) { grid.push([]); for (let j = 0; j < n; j++) grid[i].push(((i + j) % n) + 1); }
+        for (let s = 0; s < n * 4; s++) {
+            const a = Math.floor(rng() * n), b = Math.floor(rng() * n);
+            if (a !== b) { for (let i = 0; i < n; i++) [grid[i][a], grid[i][b]] = [grid[i][b], grid[i][a]]; }
+            const c = Math.floor(rng() * n), d = Math.floor(rng() * n);
+            if (c !== d) [grid[c], grid[d]] = [grid[d], grid[c]];
         }
         return grid;
     }
 
-    // ===== CAGE GENERATOR =====
-    function generateCages(solution, n, rng) {
-        const assigned = Array.from({length: n}, () => Array(n).fill(false));
+    function generateCages(solution, n, seed, ageId) {
+        const rng = seededRandom(seed + 7777);
+        const assigned = Array.from({length: n}, () => Array(n).fill(-1));
         const cages = [];
-        const cells = [];
-        for (let r = 0; r < n; r++)
-            for (let c = 0; c < n; c++)
-                cells.push([r, c]);
-        // Shuffle cells
-        for (let i = cells.length - 1; i > 0; i--) {
-            const j = Math.floor(rng() * (i + 1));
-            [cells[i], cells[j]] = [cells[j], cells[i]];
-        }
+        let cageId = 0;
 
-        for (const [r, c] of cells) {
-            if (assigned[r][c]) continue;
-            const cageCells = [[r, c]];
-            assigned[r][c] = true;
-
-            // Try to grow the cage (max size 2-3)
-            const maxSize = rng() < 0.3 ? 3 : 2;
-            const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
-
-            for (let attempt = 0; attempt < 4 && cageCells.length < maxSize; attempt++) {
-                const last = cageCells[cageCells.length - 1];
-                // Shuffle directions
-                for (let i = dirs.length - 1; i > 0; i--) {
-                    const j = Math.floor(rng() * (i + 1));
-                    [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
-                }
-                let grew = false;
-                for (const [dr, dc] of dirs) {
-                    const nr = last[0] + dr, nc = last[1] + dc;
-                    if (nr >= 0 && nr < n && nc >= 0 && nc < n && !assigned[nr][nc]) {
-                        cageCells.push([nr, nc]);
-                        assigned[nr][nc] = true;
-                        grew = true;
-                        break;
+        for (let r = 0; r < n; r++) {
+            for (let c = 0; c < n; c++) {
+                if (assigned[r][c] !== -1) continue;
+                const cells = [[r, c]];
+                assigned[r][c] = cageId;
+                const maxSize = rng() < 0.15 ? 1 : (rng() < 0.5 ? 2 : (n <= 3 ? 2 : 3));
+                if (maxSize > 1) {
+                    const tryAdd = (fromR, fromC) => {
+                        const nbs = [];
+                        if (fromR > 0 && assigned[fromR-1][fromC] === -1) nbs.push([fromR-1, fromC]);
+                        if (fromR < n-1 && assigned[fromR+1][fromC] === -1) nbs.push([fromR+1, fromC]);
+                        if (fromC > 0 && assigned[fromR][fromC-1] === -1) nbs.push([fromR, fromC-1]);
+                        if (fromC < n-1 && assigned[fromR][fromC+1] === -1) nbs.push([fromR, fromC+1]);
+                        shuffleArr(nbs, rng);
+                        for (const nb of nbs) {
+                            if (cells.length >= maxSize) break;
+                            if (assigned[nb[0]][nb[1]] === -1) { cells.push(nb); assigned[nb[0]][nb[1]] = cageId; }
+                        }
+                    };
+                    tryAdd(r, c);
+                    if (cells.length < maxSize && cells.length >= 2) {
+                        const last = cells[cells.length - 1];
+                        tryAdd(last[0], last[1]);
                     }
                 }
-                if (!grew) break;
-            }
 
-            const values = cageCells.map(([cr, cc]) => solution[cr][cc]);
-            let op, target;
-
-            if (cageCells.length === 1) {
-                op = "";
-                target = values[0];
-            } else if (cageCells.length === 2) {
-                const ops = [];
-                const a = Math.max(...values), b = Math.min(...values);
-                ops.push({ op: "+", target: a + b });
-                ops.push({ op: "-", target: a - b });
-                ops.push({ op: "×", target: a * b });
-                if (b !== 0 && a % b === 0) ops.push({ op: "÷", target: a / b });
-                const choice = ops[Math.floor(rng() * ops.length)];
-                op = choice.op;
-                target = choice.target;
-            } else {
-                // 3 cells: use + or *
-                if (rng() < 0.5) {
-                    op = "+";
-                    target = values.reduce((a, b) => a + b, 0);
+                const vals = cells.map(([r2, c2]) => solution[r2][c2]);
+                let op, target;
+                if (cells.length === 1) {
+                    op = ''; target = vals[0];
+                } else if (cells.length === 2) {
+                    const [a, b] = [Math.max(...vals), Math.min(...vals)];
+                    const ops = [['+', a + b]];
+                    if (ageId !== 'age7') ops.push(['-', a - b]);
+                    if (ageId === 'age13' || ageId === 'age16') {
+                        ops.push(['×', a * b]);
+                        if (b !== 0 && a % b === 0) ops.push(['÷', a / b]);
+                    }
+                    const pick = ops[Math.floor(rng() * ops.length)];
+                    op = pick[0]; target = pick[1];
                 } else {
-                    op = "×";
-                    target = values.reduce((a, b) => a * b, 1);
+                    const sum = vals.reduce((a, b) => a + b, 0);
+                    const prod = vals.reduce((a, b) => a * b, 1);
+                    const ops = [['+', sum]];
+                    if (ageId === 'age13' || ageId === 'age16') ops.push(['×', prod]);
+                    const pick = ops[Math.floor(rng() * ops.length)];
+                    op = pick[0]; target = pick[1];
                 }
+                cages.push({ cells, op, target });
+                cageId++;
             }
-            cages.push({ cells: cageCells, target, op });
         }
         return cages;
     }
 
-    function generatePuzzle(n, index) {
-        const rng = mulberry32(n * 1000 + index * 137 + 42);
-        const solution = generateLatinSquare(n, rng);
-        const cages = generateCages(solution, n, rng);
-        return { solution, cages };
+    function generatePuzzle(ageId, index) {
+        const ag = AGE_GROUPS.find(a => a.id === ageId);
+        const n = ag.gridSize;
+        const seed = n * 10000 + index * 137 + 42;
+        const solution = generateLatinSquare(n, seed);
+        const cages = generateCages(solution, n, seed, ageId);
+        return { n, cages, solution };
     }
 
-    // ===== GET PUZZLE =====
-    function getPuzzle(diffKey, index) {
-        const diff = DIFFICULTIES.find(d => d.key === diffKey);
-        if (diff.size === 3) return PUZZLES_3[index];
-        if (diff.size === 4) return PUZZLES_4[index];
-        return generatePuzzle(diff.size, index);
-    }
+    function loadProgress() { try { return JSON.parse(localStorage.getItem('kenken-he')) || {}; } catch { return {}; } }
+    function saveProgressItem(key) { const p = loadProgress(); p[key] = true; localStorage.setItem('kenken-he', JSON.stringify(p)); }
 
-    // ===== STATE =====
-    let state = {
-        screen: 'home',
-        difficulty: null,
-        puzzleIndex: 0,
-        gridSize: 0,
-        puzzle: null,
-        grid: [],       // user values (0 = empty)
-        pencil: [],     // pencil[r][c] = Set of numbers
-        selected: null, // [row, col]
-        pencilMode: false,
-        showErrors: false,
-        timerSeconds: 0,
-        timerInterval: null,
-        solved: false,
-    };
-
-    // LocalStorage progress
-    function getProgress() {
-        try {
-            return JSON.parse(localStorage.getItem('kenken_progress') || '{}');
-        } catch { return {}; }
-    }
-    function saveProgress(diffKey, index, time) {
-        const p = getProgress();
-        const key = diffKey + '_' + index;
-        if (!p[key] || time < p[key].time) {
-            p[key] = { solved: true, time };
-        }
-        localStorage.setItem('kenken_progress', JSON.stringify(p));
-    }
-    function isSolved(diffKey, index) {
-        const p = getProgress();
-        return p[diffKey + '_' + index];
-    }
-    function countSolved(diffKey, count) {
-        let c = 0;
-        for (let i = 0; i < count; i++) {
-            if (isSolved(diffKey, i)) c++;
-        }
-        return c;
-    }
-
-    // ===== DOM =====
-    const $ = id => document.getElementById(id);
-    const homeScreen = $('homeScreen');
-    const selectScreen = $('selectScreen');
-    const gameScreen = $('gameScreen');
-    const gridEl = $('grid');
-    const timerEl = $('timer');
-    const numpadEl = $('numpad');
-    const winOverlay = $('winOverlay');
-    const helpModal = $('helpModal');
-
-    function showScreen(name) {
-        [homeScreen, selectScreen, gameScreen].forEach(s => s.classList.remove('active'));
-        if (name === 'home') homeScreen.classList.add('active');
-        else if (name === 'select') selectScreen.classList.add('active');
-        else if (name === 'game') gameScreen.classList.add('active');
-        state.screen = name;
-    }
-
-    // ===== HOME SCREEN =====
     function renderHome() {
-        const container = $('difficultyCards');
+        document.getElementById('homeScreen').classList.remove('hidden');
+        document.getElementById('stageScreen').classList.remove('active');
+        document.getElementById('gameScreen').classList.remove('active');
+        document.getElementById('winModal').classList.remove('active');
+        const container = document.getElementById('ageCards');
         container.innerHTML = '';
-        DIFFICULTIES.forEach(d => {
-            const solved = countSolved(d.key, d.count);
-            const pct = (solved / d.count * 100).toFixed(0);
-            const card = document.createElement('button');
-            card.className = 'difficulty-card';
-            card.innerHTML = `
-                <div class="diff-icon">${'&#9679;'.repeat(d.dots)}</div>
-                <div class="diff-info">
-                    <div class="diff-name">${d.name}</div>
-                    <div class="diff-desc">${d.desc} &bull; ${d.size}&times;${d.size}</div>
-                </div>
-                <div class="diff-right">
-                    <div class="diff-progress"><span class="progress-fill" style="width:${pct}%"></span></div>
-                    <div class="diff-count">${solved}/${d.count}</div>
-                </div>
-            `;
-            card.addEventListener('click', () => openDifficulty(d.key));
+        const progress = loadProgress();
+        AGE_GROUPS.forEach(ag => {
+            const solved = Array.from({length: ag.count}, (_, i) => progress[`${ag.id}-${i}`] ? 1 : 0).reduce((a,b) => a+b, 0);
+            const card = document.createElement('div');
+            card.className = 'age-card';
+            card.innerHTML = `<div class="age-icon">${ag.icon}</div><h3>${ag.label}</h3><p>${ag.desc}</p><div class="count">${solved}/${ag.count} פתורים</div>`;
+            card.addEventListener('click', () => showStages(ag.id));
             container.appendChild(card);
         });
     }
 
-    // ===== SELECT SCREEN =====
-    function openDifficulty(diffKey) {
-        state.difficulty = diffKey;
-        const diff = DIFFICULTIES.find(d => d.key === diffKey);
-        $('selectTitle').textContent = diff.name + ' Puzzles';
-        const list = $('puzzleList');
-        list.innerHTML = '';
-        for (let i = 0; i < diff.count; i++) {
-            const info = isSolved(diffKey, i);
-            const item = document.createElement('div');
-            item.className = 'puzzle-item';
-            item.innerHTML = `
-                <span class="puzzle-label">Puzzle ${i + 1}</span>
-                <span class="puzzle-status ${info ? 'solved' : ''}">${info ? 'Solved' : 'Not started'}</span>
-                <span class="puzzle-time">${info ? formatTime(info.time) : ''}</span>
-            `;
-            item.addEventListener('click', () => startPuzzle(diffKey, i));
-            list.appendChild(item);
+    function showStages(ageId) {
+        currentAge = ageId;
+        const ag = AGE_GROUPS.find(a => a.id === ageId);
+        document.getElementById('homeScreen').classList.add('hidden');
+        document.getElementById('stageScreen').classList.add('active');
+        document.getElementById('gameScreen').classList.remove('active');
+        document.getElementById('stageTitle').textContent = `${ag.label} — ${ag.gridSize}×${ag.gridSize}`;
+        const grid = document.getElementById('stagesGrid');
+        grid.innerHTML = '';
+        const progress = loadProgress();
+        for (let i = 0; i < ag.count; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'stage-btn' + (progress[`${ageId}-${i}`] ? ' solved' : '');
+            btn.textContent = i + 1;
+            btn.addEventListener('click', () => startPuzzle(ageId, i));
+            grid.appendChild(btn);
         }
-        showScreen('select');
     }
 
-    // ===== GAME =====
-    function startPuzzle(diffKey, index) {
-        const diff = DIFFICULTIES.find(d => d.key === diffKey);
-        state.difficulty = diffKey;
-        state.puzzleIndex = index;
-        state.gridSize = diff.size;
-        state.puzzle = getPuzzle(diffKey, index);
-        state.grid = Array.from({length: diff.size}, () => Array(diff.size).fill(0));
-        state.pencil = Array.from({length: diff.size}, () => Array.from({length: diff.size}, () => new Set()));
-        state.selected = null;
-        state.pencilMode = false;
-        state.showErrors = false;
-        state.solved = false;
-        state.timerSeconds = 0;
-        clearInterval(state.timerInterval);
+    function startPuzzle(ageId, index) {
+        currentAge = ageId; currentIndex = index;
+        const ag = AGE_GROUPS.find(a => a.id === ageId);
+        puzzle = generatePuzzle(ageId, index);
+        const n = puzzle.n;
+        userGrid = Array.from({length: n}, () => Array(n).fill(0));
+        pencilMarks = Array.from({length: n}, () => Array.from({length: n}, () => new Set()));
+        selectedCell = null; pencilMode = false; checkErrors = false;
 
-        $('pencilBtn').classList.remove('active');
-        $('errorsBtn').classList.remove('active');
-        winOverlay.classList.remove('active');
+        document.getElementById('homeScreen').classList.add('hidden');
+        document.getElementById('stageScreen').classList.remove('active');
+        document.getElementById('gameScreen').classList.add('active');
+        document.getElementById('puzzleInfo').textContent = `${ag.label} • שלב ${index + 1}`;
+        document.getElementById('normalBtn').classList.add('active');
+        document.getElementById('pencilBtn').classList.remove('active');
+        document.getElementById('winModal').classList.remove('active');
 
-        buildGrid();
-        buildNumpad();
+        buildNumPad();
+        renderGrid();
         startTimer();
-        showScreen('game');
     }
 
-    function buildGrid() {
-        const n = state.gridSize;
-        const cellSize = Math.min(Math.floor((Math.min(window.innerWidth - 40, 560)) / n), 72);
+    function startTimer() {
+        clearInterval(timerInterval);
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+            const s = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer').textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+        }, 1000);
+    }
 
-        gridEl.style.gridTemplateColumns = `repeat(${n}, ${cellSize}px)`;
-        gridEl.style.gridTemplateRows = `repeat(${n}, ${cellSize}px)`;
-        gridEl.innerHTML = '';
+    function buildNumPad() {
+        const pad = document.getElementById('numPad');
+        pad.innerHTML = '';
+        for (let i = 1; i <= puzzle.n; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'num-btn';
+            btn.textContent = i;
+            btn.addEventListener('click', () => enterNumber(i));
+            pad.appendChild(btn);
+        }
+    }
 
-        // Build cage map
+    function renderGrid() {
+        const g = document.getElementById('grid');
+        const n = puzzle.n;
+        g.style.gridTemplateColumns = `repeat(${n}, 60px)`;
+        g.innerHTML = '';
+
         const cageMap = Array.from({length: n}, () => Array(n).fill(-1));
-        state.puzzle.cages.forEach((cage, ci) => {
-            cage.cells.forEach(([r, c]) => { cageMap[r][c] = ci; });
-        });
+        puzzle.cages.forEach((cage, ci) => { cage.cells.forEach(([r, c]) => { cageMap[r][c] = ci; }); });
 
         for (let r = 0; r < n; r++) {
             for (let c = 0; c < n; c++) {
                 const cell = document.createElement('div');
-                cell.className = 'kenken-cell';
-                cell.dataset.row = r;
-                cell.dataset.col = c;
+                cell.className = 'kk-cell';
 
-                // Cage borders
                 const ci = cageMap[r][c];
                 if (r === 0 || cageMap[r-1][c] !== ci) cell.classList.add('cage-top');
                 if (r === n-1 || cageMap[r+1]?.[c] !== ci) cell.classList.add('cage-bottom');
                 if (c === 0 || cageMap[r][c-1] !== ci) cell.classList.add('cage-left');
                 if (c === n-1 || cageMap[r][c+1] !== ci) cell.classList.add('cage-right');
 
-                // Cage label (top-left cell of each cage)
-                const cage = state.puzzle.cages[ci];
-                if (cage.cells[0][0] === r && cage.cells[0][1] === c) {
+                const cage = puzzle.cages[ci];
+                const isFirst = cage.cells[0][0] === r && cage.cells[0][1] === c;
+                if (isFirst) {
                     const label = document.createElement('span');
                     label.className = 'cage-label';
-                    const opDisplay = cage.op === "" ? "" : cage.op;
-                    label.textContent = cage.target + opDisplay;
+                    label.textContent = cage.op ? `${cage.target}${cage.op}` : cage.target;
                     cell.appendChild(label);
                 }
 
-                cell.addEventListener('click', () => selectCell(r, c));
-                gridEl.appendChild(cell);
+                if (userGrid[r][c]) {
+                    const val = document.createElement('span');
+                    val.className = 'value';
+                    val.textContent = userGrid[r][c];
+                    cell.appendChild(val);
+                } else if (pencilMarks[r][c].size > 0) {
+                    const pm = document.createElement('div');
+                    pm.className = 'pencil-marks';
+                    for (let i = 1; i <= Math.min(n, 9); i++) {
+                        const s = document.createElement('span');
+                        s.textContent = pencilMarks[r][c].has(i) ? i : '';
+                        pm.appendChild(s);
+                    }
+                    cell.appendChild(pm);
+                }
+
+                if (selectedCell && selectedCell[0] === r && selectedCell[1] === c) cell.classList.add('selected');
+                else if (selectedCell && (selectedCell[0] === r || selectedCell[1] === c)) cell.classList.add('highlight');
+                if (checkErrors && userGrid[r][c] && hasError(r, c)) cell.classList.add('error');
+
+                cell.addEventListener('click', () => { selectedCell = [r, c]; renderGrid(); });
+                g.appendChild(cell);
             }
         }
-        renderGrid();
     }
 
-    function renderGrid() {
-        const n = state.gridSize;
-        const cells = gridEl.querySelectorAll('.kenken-cell');
-        const errors = state.showErrors ? findErrors() : new Set();
-
-        cells.forEach(cell => {
-            const r = +cell.dataset.row;
-            const c = +cell.dataset.col;
-            const val = state.grid[r][c];
-            const marks = state.pencil[r][c];
-
-            // Clear old value / pencil
-            cell.querySelectorAll('.cell-value, .pencil-marks').forEach(el => el.remove());
-
-            // Highlight
-            cell.classList.remove('selected', 'highlighted', 'error-cell');
-            if (state.selected) {
-                const [sr, sc] = state.selected;
-                if (r === sr && c === sc) cell.classList.add('selected');
-                else if (r === sr || c === sc) cell.classList.add('highlighted');
-            }
-            if (errors.has(r + ',' + c)) cell.classList.add('error-cell');
-
-            if (val > 0) {
-                const span = document.createElement('span');
-                span.className = 'cell-value user-input';
-                if (errors.has(r + ',' + c)) span.classList.add('error-val');
-                span.textContent = val;
-                cell.appendChild(span);
-            } else if (marks.size > 0) {
-                const container = document.createElement('div');
-                container.className = 'pencil-marks';
-                // Always use a 3-column grid; rows adapt to grid size
-                const slots = n <= 3 ? 6 : 9;
-                for (let num = 1; num <= slots; num++) {
-                    const mark = document.createElement('span');
-                    mark.className = 'pencil-mark';
-                    if (num <= n && marks.has(num)) mark.textContent = num;
-                    container.appendChild(mark);
-                }
-                cell.appendChild(container);
-            }
-        });
-    }
-
-    function selectCell(r, c) {
-        state.selected = [r, c];
-        renderGrid();
+    function hasError(r, c) {
+        const v = userGrid[r][c];
+        if (!v) return false;
+        const n = puzzle.n;
+        for (let i = 0; i < n; i++) {
+            if (i !== c && userGrid[r][i] === v) return true;
+            if (i !== r && userGrid[i][c] === v) return true;
+        }
+        return false;
     }
 
     function enterNumber(num) {
-        if (!state.selected || state.solved) return;
-        const [r, c] = state.selected;
-
-        if (state.pencilMode) {
-            if (num > state.gridSize) return;
-            const marks = state.pencil[r][c];
-            if (marks.has(num)) marks.delete(num);
-            else marks.add(num);
-            state.grid[r][c] = 0; // clear value if setting pencil
+        if (!selectedCell) return;
+        const [r, c] = selectedCell;
+        if (pencilMode) {
+            if (pencilMarks[r][c].has(num)) pencilMarks[r][c].delete(num);
+            else pencilMarks[r][c].add(num);
+            userGrid[r][c] = 0;
         } else {
-            if (num > state.gridSize) return;
-            state.grid[r][c] = num;
-            state.pencil[r][c].clear();
+            userGrid[r][c] = userGrid[r][c] === num ? 0 : num;
+            pencilMarks[r][c].clear();
         }
         renderGrid();
         checkWin();
     }
 
-    function clearCell() {
-        if (!state.selected || state.solved) return;
-        const [r, c] = state.selected;
-        state.grid[r][c] = 0;
-        state.pencil[r][c].clear();
-        renderGrid();
-    }
-
-    function clearAll() {
-        if (state.solved) return;
-        const n = state.gridSize;
+    function checkWin() {
+        const n = puzzle.n;
+        for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (userGrid[r][c] === 0) return;
         for (let r = 0; r < n; r++) {
-            for (let c = 0; c < n; c++) {
-                state.grid[r][c] = 0;
-                state.pencil[r][c].clear();
-            }
+            const row = new Set(userGrid[r]); if (row.size !== n) return;
+            const col = new Set(); for (let c = 0; c < n; c++) col.add(userGrid[c][r]); if (col.size !== n) return;
         }
-        renderGrid();
+        for (const cage of puzzle.cages) if (!checkCage(cage)) return;
+
+        clearInterval(timerInterval);
+        const s = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('winMsg').textContent = `נפתר ב-${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+        document.getElementById('winModal').classList.add('active');
+        saveProgressItem(`${currentAge}-${currentIndex}`);
+        spawnConfetti();
     }
 
-    function findErrors() {
-        const errors = new Set();
-        const n = state.gridSize;
-        const g = state.grid;
-
-        // Row duplicates
-        for (let r = 0; r < n; r++) {
-            const seen = {};
-            for (let c = 0; c < n; c++) {
-                if (g[r][c] === 0) continue;
-                if (seen[g[r][c]] !== undefined) {
-                    errors.add(r + ',' + c);
-                    errors.add(r + ',' + seen[g[r][c]]);
-                }
-                seen[g[r][c]] = c;
-            }
-        }
-        // Column duplicates
-        for (let c = 0; c < n; c++) {
-            const seen = {};
-            for (let r = 0; r < n; r++) {
-                if (g[r][c] === 0) continue;
-                if (seen[g[r][c]] !== undefined) {
-                    errors.add(r + ',' + c);
-                    errors.add(seen[g[r][c]] + ',' + c);
-                }
-                seen[g[r][c]] = r;
-            }
-        }
-        // Cage errors (only check full cages)
-        state.puzzle.cages.forEach(cage => {
-            const vals = cage.cells.map(([r, c]) => g[r][c]);
-            if (vals.some(v => v === 0)) return;
-            if (!checkCage(vals, cage.target, cage.op)) {
-                cage.cells.forEach(([r, c]) => errors.add(r + ',' + c));
-            }
-        });
-        return errors;
-    }
-
-    function checkCage(vals, target, op) {
-        if (op === "" || op === null) return vals[0] === target;
-        if (op === "+") return vals.reduce((a, b) => a + b, 0) === target;
-        if (op === "×") return vals.reduce((a, b) => a * b, 1) === target;
-        if (vals.length === 2) {
-            const [a, b] = vals;
-            if (op === "-") return Math.abs(a - b) === target;
-            if (op === "÷") return (a / b === target || b / a === target);
-        }
+    function checkCage(cage) {
+        const vals = cage.cells.map(([r, c]) => userGrid[r][c]);
+        if (vals.some(v => v === 0)) return false;
+        if (cage.op === '') return vals[0] === cage.target;
+        if (cage.op === '+') return vals.reduce((a, b) => a + b, 0) === cage.target;
+        if (cage.op === '×') return vals.reduce((a, b) => a * b, 1) === cage.target;
+        if (cage.op === '-') return Math.max(...vals) - Math.min(...vals) === cage.target;
+        if (cage.op === '÷') { const [a, b] = [Math.max(...vals), Math.min(...vals)]; return b !== 0 && a / b === cage.target; }
         return false;
     }
 
-    function checkWin() {
-        const n = state.gridSize;
-        // All cells filled?
-        for (let r = 0; r < n; r++)
-            for (let c = 0; c < n; c++)
-                if (state.grid[r][c] === 0) return false;
-
-        // Check against solution
-        for (let r = 0; r < n; r++)
-            for (let c = 0; c < n; c++)
-                if (state.grid[r][c] !== state.puzzle.solution[r][c]) return false;
-
-        // WIN!
-        state.solved = true;
-        clearInterval(state.timerInterval);
-        saveProgress(state.difficulty, state.puzzleIndex, state.timerSeconds);
-        showWin();
-        return true;
-    }
-
-    function showWin() {
-        $('winTime').textContent = 'Solved in ' + formatTime(state.timerSeconds);
-        winOverlay.classList.add('active');
-        launchConfetti();
-    }
-
-    // ===== NUMPAD =====
-    function buildNumpad() {
-        numpadEl.innerHTML = '';
-        for (let i = 1; i <= state.gridSize; i++) {
-            const btn = document.createElement('button');
-            btn.className = 'num-btn';
-            btn.textContent = i;
-            btn.addEventListener('click', () => enterNumber(i));
-            numpadEl.appendChild(btn);
+    function spawnConfetti() {
+        const emojis = ['🎉','⭐','🎊','✨','🏆'];
+        for (let i = 0; i < 30; i++) {
+            const el = document.createElement('div');
+            el.className = 'confetti';
+            el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.animationDuration = (2 + Math.random() * 2) + 's';
+            el.style.animationDelay = Math.random() * 0.5 + 's';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 5000);
         }
     }
 
-    // ===== TIMER =====
-    function startTimer() {
-        clearInterval(state.timerInterval);
-        state.timerSeconds = 0;
-        timerEl.textContent = '0:00';
-        state.timerInterval = setInterval(() => {
-            if (state.solved) return;
-            state.timerSeconds++;
-            timerEl.textContent = formatTime(state.timerSeconds);
-        }, 1000);
-    }
-
-    function formatTime(s) {
-        const min = Math.floor(s / 60);
-        const sec = s % 60;
-        return min + ':' + (sec < 10 ? '0' : '') + sec;
-    }
-
-    // ===== CONFETTI =====
-    function launchConfetti() {
-        const colors = ['#4a90d9', '#4caf50', '#f0c040', '#e74c3c', '#9b59b6', '#e67e22'];
-        for (let i = 0; i < 60; i++) {
-            const piece = document.createElement('div');
-            piece.className = 'confetti-piece';
-            piece.style.left = Math.random() * 100 + 'vw';
-            piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-            piece.style.width = (Math.random() * 8 + 6) + 'px';
-            piece.style.height = (Math.random() * 8 + 6) + 'px';
-            piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-            piece.style.animation = `confettiFall ${Math.random() * 2 + 2}s linear ${Math.random() * 0.5}s forwards`;
-            document.body.appendChild(piece);
-            setTimeout(() => piece.remove(), 4000);
-        }
-    }
-
-    // ===== KEYBOARD INPUT =====
-    document.addEventListener('keydown', (e) => {
-        if (state.screen !== 'game' || state.solved) return;
+    document.addEventListener('keydown', e => {
+        if (!selectedCell || !puzzle) return;
         const num = parseInt(e.key);
-        if (num >= 1 && num <= state.gridSize) {
-            enterNumber(num);
-            e.preventDefault();
-        }
+        if (num >= 1 && num <= puzzle.n) { enterNumber(num); return; }
         if (e.key === 'Backspace' || e.key === 'Delete') {
-            clearCell();
-            e.preventDefault();
+            const [r, c] = selectedCell;
+            userGrid[r][c] = 0; pencilMarks[r][c].clear(); renderGrid(); return;
         }
-        // Arrow key navigation
-        if (state.selected) {
-            const [r, c] = state.selected;
-            const n = state.gridSize;
-            if (e.key === 'ArrowUp' && r > 0) { selectCell(r-1, c); e.preventDefault(); }
-            if (e.key === 'ArrowDown' && r < n-1) { selectCell(r+1, c); e.preventDefault(); }
-            if (e.key === 'ArrowLeft' && c > 0) { selectCell(r, c-1); e.preventDefault(); }
-            if (e.key === 'ArrowRight' && c < n-1) { selectCell(r, c+1); e.preventDefault(); }
-        }
+        const [r, c] = selectedCell;
+        if (e.key === 'ArrowUp' && r > 0) { selectedCell = [r-1, c]; renderGrid(); e.preventDefault(); }
+        if (e.key === 'ArrowDown' && r < puzzle.n-1) { selectedCell = [r+1, c]; renderGrid(); e.preventDefault(); }
+        if (e.key === 'ArrowLeft' && c > 0) { selectedCell = [r, c-1]; renderGrid(); e.preventDefault(); }
+        if (e.key === 'ArrowRight' && c < puzzle.n-1) { selectedCell = [r, c+1]; renderGrid(); e.preventDefault(); }
     });
 
-    // ===== EVENT LISTENERS =====
-    $('homeBtn').addEventListener('click', () => {
-        clearInterval(state.timerInterval);
-        renderHome();
-        showScreen('home');
+    document.getElementById('backToHome').addEventListener('click', renderHome);
+    document.getElementById('backBtn').addEventListener('click', () => showStages(currentAge));
+    document.getElementById('normalBtn').addEventListener('click', () => {
+        pencilMode = false;
+        document.getElementById('normalBtn').classList.add('active');
+        document.getElementById('pencilBtn').classList.remove('active');
     });
-    $('backToHome').addEventListener('click', () => {
-        renderHome();
-        showScreen('home');
+    document.getElementById('pencilBtn').addEventListener('click', () => {
+        pencilMode = true;
+        document.getElementById('pencilBtn').classList.add('active');
+        document.getElementById('normalBtn').classList.remove('active');
     });
-    $('backToSelect').addEventListener('click', () => {
-        clearInterval(state.timerInterval);
-        openDifficulty(state.difficulty);
+    document.getElementById('eraseBtn').addEventListener('click', () => {
+        if (!selectedCell) return;
+        const [r, c] = selectedCell;
+        userGrid[r][c] = 0; pencilMarks[r][c].clear(); renderGrid();
     });
-    $('pencilBtn').addEventListener('click', () => {
-        state.pencilMode = !state.pencilMode;
-        $('pencilBtn').classList.toggle('active', state.pencilMode);
+    document.getElementById('clearAllBtn').addEventListener('click', () => {
+        if (!puzzle) return;
+        const n = puzzle.n;
+        userGrid = Array.from({length: n}, () => Array(n).fill(0));
+        pencilMarks = Array.from({length: n}, () => Array.from({length: n}, () => new Set()));
+        checkErrors = false; renderGrid();
     });
-    $('errorsBtn').addEventListener('click', () => {
-        state.showErrors = !state.showErrors;
-        $('errorsBtn').classList.toggle('active', state.showErrors);
-        renderGrid();
-    });
-    $('clearCellBtn').addEventListener('click', clearCell);
-    $('clearAllBtn').addEventListener('click', () => {
-        if (confirm('Clear all cells?')) clearAll();
-    });
-    $('helpBtn').addEventListener('click', () => helpModal.classList.add('active'));
-    $('closeHelp').addEventListener('click', () => helpModal.classList.remove('active'));
-    helpModal.addEventListener('click', (e) => {
-        if (e.target === helpModal) helpModal.classList.remove('active');
-    });
-    $('nextPuzzleBtn').addEventListener('click', () => {
-        winOverlay.classList.remove('active');
-        const diff = DIFFICULTIES.find(d => d.key === state.difficulty);
-        const nextIndex = (state.puzzleIndex + 1) % diff.count;
-        startPuzzle(state.difficulty, nextIndex);
-    });
-    $('winHomeBtn').addEventListener('click', () => {
-        winOverlay.classList.remove('active');
-        clearInterval(state.timerInterval);
-        renderHome();
-        showScreen('home');
+    document.getElementById('checkBtn').addEventListener('click', () => { checkErrors = !checkErrors; renderGrid(); });
+    document.getElementById('winBackBtn').addEventListener('click', () => { document.getElementById('winModal').classList.remove('active'); renderHome(); });
+    document.getElementById('winNextBtn').addEventListener('click', () => {
+        document.getElementById('winModal').classList.remove('active');
+        const ag = AGE_GROUPS.find(a => a.id === currentAge);
+        const next = currentIndex + 1;
+        if (next < ag.count) startPuzzle(currentAge, next);
+        else showStages(currentAge);
     });
 
-    // ===== INIT =====
     renderHome();
-})();
-</script>
+    </script>
 </body>
 </html>

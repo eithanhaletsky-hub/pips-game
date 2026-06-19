@@ -1,905 +1,571 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connections - Word Puzzle Game</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <title>חיבורים - משחק מילים</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
-            --bg: #faf8f5;
-            --surface: #ffffff;
-            --text: #1a1a1a;
-            --text-muted: #6b6b6b;
-            --border: #e0ddd8;
-            --accent: #4a90d9;
-            --accent-hover: #3a7bc8;
-            --success: #4caf50;
-            --error: #e74c3c;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
-            --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
-            --radius: 12px;
-            --radius-sm: 8px;
+            --bg: #faf8f5; --surface: #ffffff; --text: #1a1a1a;
+            --text-secondary: #6b6b6b; --accent: #4a90d9; --border: #e0ddd8;
+            --yellow: #f9df6d; --yellow-text: #5a4b00;
+            --green: #a0c35a; --green-text: #2a3d00;
+            --blue: #b0c4ef; --blue-text: #1a2a5e;
+            --purple: #ba81c5; --purple-text: #3a1a4a;
+        }
+        body { font-family: 'Rubik', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-            --yellow: #f9df6d;
-            --yellow-text: #5a4a00;
-            --green: #a0c35a;
-            --green-text: #2a3d00;
-            --blue: #b0c4ef;
-            --blue-text: #1a2d5a;
-            --purple: #ba81c5;
-            --purple-text: #3a1a45;
-        }
+        .game-nav { display: flex; justify-content: center; background: #1a1a1a; direction: ltr; }
+        .game-nav-link { color: #999; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px 24px; letter-spacing: 0.5px; transition: all 0.2s; border-bottom: 2px solid transparent; font-family: 'Rubik', sans-serif; }
+        .game-nav-link:hover { color: #fff; }
+        .game-nav-link.active { color: #fff; border-bottom-color: #4a90d9; }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+        .container { max-width: 540px; margin: 0 auto; padding: 16px; }
+        header { text-align: center; padding: 20px 0 10px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+        header h1 { font-size: 36px; font-weight: 800; }
+        header p { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
 
-        /* === Nav Bar === */
-        .top-nav {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 32px;
-            padding: 10px 20px;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-            font-weight: 500;
+        /* Home Screen */
+        .home-screen { text-align: center; }
+        .home-screen.hidden { display: none; }
+        .age-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+        .age-card {
+            background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+            padding: 20px 12px; cursor: pointer; transition: all 0.2s; text-align: center;
         }
-        .top-nav a {
-            text-decoration: none;
-            color: var(--text-muted);
-            padding: 4px 0;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-        .top-nav a:hover { color: var(--text); }
-        .top-nav a.active {
-            color: var(--text);
-            border-bottom-color: var(--text);
-        }
+        .age-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .age-card .age-icon { font-size: 32px; margin-bottom: 8px; }
+        .age-card h3 { font-size: 18px; margin-bottom: 4px; }
+        .age-card p { color: var(--text-secondary); font-size: 12px; }
+        .age-card .count { font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 8px; }
 
-        /* === Header === */
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px 20px 8px;
-            text-align: center;
+        .stage-screen { display: none; }
+        .stage-screen.active { display: block; }
+        .stage-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .back-btn { background: none; border: none; font-size: 16px; cursor: pointer; font-family: 'Rubik', sans-serif; font-weight: 600; color: var(--text); }
+        .stages-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+        .stage-btn {
+            aspect-ratio: 1; border-radius: 10px; border: 2px solid var(--border); background: var(--surface);
+            font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'Rubik', sans-serif;
         }
-        .header-center { text-align: center; }
-        .logo {
-            font-family: 'Playfair Display', serif;
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: 2px;
-        }
-        .tagline {
-            font-size: 13px;
-            color: var(--text-muted);
-            font-weight: 400;
-            margin-top: 2px;
-        }
+        .stage-btn:hover { border-color: var(--accent); }
+        .stage-btn.solved { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
+        .stage-btn.locked { opacity: 0.4; cursor: not-allowed; }
 
-        /* === Game Container === */
-        .game-container {
-            max-width: 520px;
-            margin: 0 auto;
-            padding: 12px 16px 32px;
-        }
+        /* Game Screen */
+        .game-screen { display: none; }
+        .game-screen.active { display: block; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; }
+        .puzzle-label { font-weight: 600; }
+        .mistakes-display { display: flex; align-items: center; gap: 6px; direction: ltr; }
+        .mistake-dot { width: 12px; height: 12px; border-radius: 50%; background: #ddd; transition: background 0.3s; }
+        .mistake-dot.used { background: #333; }
+        .timer { font-variant-numeric: tabular-nums; color: var(--text-secondary); direction: ltr; }
 
-        /* === Info Bar === */
-        .info-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-        .puzzle-num { font-weight: 600; color: var(--text); }
-        .timer { font-variant-numeric: tabular-nums; }
+        .solved-groups { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+        .solved-group { padding: 14px; border-radius: 8px; text-align: center; animation: revealGroup 0.4s ease; }
+        @keyframes revealGroup { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+        .solved-group .category { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+        .solved-group .words { font-size: 13px; font-weight: 500; }
+        .group-yellow { background: var(--yellow); color: var(--yellow-text); }
+        .group-green { background: var(--green); color: var(--green-text); }
+        .group-blue { background: var(--blue); color: var(--blue-text); }
+        .group-purple { background: var(--purple); color: var(--purple-text); }
 
-        /* === Solved Groups === */
-        .solved-area {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 8px;
+        .word-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+        .word-cell {
+            background: #e8e4df; border: none; border-radius: 8px; padding: 14px 6px;
+            font-family: 'Rubik', sans-serif; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: all 0.15s; text-align: center; line-height: 1.3;
+            min-height: 56px; display: flex; align-items: center; justify-content: center;
         }
-        .solved-group {
-            border-radius: var(--radius-sm);
-            padding: 14px 16px;
-            text-align: center;
-            animation: solvedReveal 0.4s ease-out;
-        }
-        @keyframes solvedReveal {
-            from { opacity: 0; transform: scaleY(0.6); }
-            to { opacity: 1; transform: scaleY(1); }
-        }
-        .solved-group.yellow { background: var(--yellow); color: var(--yellow-text); }
-        .solved-group.green { background: var(--green); color: var(--green-text); }
-        .solved-group.blue { background: var(--blue); color: var(--blue-text); }
-        .solved-group.purple { background: var(--purple); color: var(--purple-text); }
+        .word-cell:hover { background: #dbd7d2; }
+        .word-cell.selected { background: var(--text); color: white; }
+        .word-cell.shake { animation: shake 0.4s ease; }
+        @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 
-        .solved-category {
-            font-weight: 700;
-            font-size: 15px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        .solved-words {
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        /* === Grid === */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .tile {
-            aspect-ratio: 1.6 / 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #e8e4df;
-            border: 2px solid transparent;
-            border-radius: var(--radius-sm);
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            cursor: pointer;
-            user-select: none;
-            transition: all 0.15s ease;
-            text-align: center;
-            padding: 4px 6px;
-            line-height: 1.2;
-        }
-        .tile:hover {
-            background: #ddd9d3;
-        }
-        .tile.selected {
-            background: var(--text);
-            color: #fff;
-            border-color: var(--text);
-            transform: scale(0.97);
-        }
-        .tile.shake {
-            animation: shake 0.4s ease;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-6px); }
-            40% { transform: translateX(6px); }
-            60% { transform: translateX(-4px); }
-            80% { transform: translateX(4px); }
-        }
-        .tile.pop-out {
-            animation: popOut 0.3s ease forwards;
-        }
-        @keyframes popOut {
-            to { opacity: 0; transform: scale(0.7); }
-        }
-
-        /* === Mistakes === */
-        .mistakes-area {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 16px;
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-        .mistake-dots {
-            display: flex;
-            gap: 6px;
-        }
-        .mistake-dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--text);
-            transition: all 0.3s ease;
-        }
-        .mistake-dot.used {
-            background: #ccc;
-            transform: scale(0.8);
-        }
-
-        /* === Buttons === */
-        .btn-row {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .message { text-align: center; font-size: 14px; font-weight: 600; min-height: 24px; margin-bottom: 8px; }
+        .actions { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
         .btn {
-            padding: 10px 22px;
-            border-radius: 24px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.15s;
-            border: 2px solid var(--border);
-            background: var(--surface);
-            color: var(--text);
+            font-family: 'Rubik', sans-serif; font-size: 14px; font-weight: 600;
+            padding: 12px 24px; border-radius: 24px; cursor: pointer; transition: all 0.15s;
+            border: 2px solid var(--text);
         }
-        .btn:hover {
-            background: #f0ede8;
-        }
-        .btn:disabled {
-            opacity: 0.4;
-            cursor: default;
-        }
-        .btn.primary {
-            background: var(--text);
-            color: #fff;
-            border-color: var(--text);
-        }
-        .btn.primary:hover {
-            background: #333;
-        }
-        .btn.primary:disabled {
-            background: #999;
-            border-color: #999;
-        }
+        .btn-outline { background: transparent; color: var(--text); }
+        .btn-outline:hover { background: #f0ece7; }
+        .btn-primary { background: var(--text); color: white; border-color: var(--text); }
+        .btn-primary:hover { background: #333; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* === Toast === */
-        .toast {
-            position: fixed;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            background: var(--text);
-            color: #fff;
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s ease;
-            z-index: 200;
-            white-space: nowrap;
-        }
-        .toast.visible {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* === End Screen === */
-        .end-screen {
-            display: none;
-            text-align: center;
-            margin-top: 20px;
-            animation: fadeIn 0.5s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .end-screen.show { display: block; }
-        .end-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 22px;
-            margin-bottom: 6px;
-        }
-        .end-subtitle {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 16px;
-        }
-        .results-grid {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            margin-bottom: 16px;
-            font-size: 22px;
-            line-height: 1.4;
-        }
-        .end-btns {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        /* === How to Play Modal === */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            z-index: 300;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-overlay.show { display: flex; }
-        .modal {
-            background: var(--surface);
-            border-radius: var(--radius);
-            padding: 28px 24px;
-            max-width: 420px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: var(--shadow-lg);
-        }
-        .modal h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 22px;
-            margin-bottom: 14px;
-        }
-        .modal p, .modal li {
-            font-size: 14px;
-            color: var(--text-muted);
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-        .modal ul { padding-left: 20px; }
-        .color-key {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin: 12px 0;
-        }
-        .color-key-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-        }
-        .color-swatch {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-        }
-        .modal-close {
-            display: block;
-            margin: 16px auto 0;
-            padding: 10px 32px;
-            border-radius: 24px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            background: var(--text);
-            color: #fff;
-            border: none;
-        }
-
-        /* Responsive */
-        @media (max-width: 480px) {
-            .tile { font-size: 11px; }
-            .game-container { padding: 8px 10px 24px; }
-        }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--surface); border-radius: 16px; padding: 32px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .modal h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+        .modal p { color: var(--text-secondary); margin-bottom: 16px; }
+        .result-grid { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 16px 0; font-size: 24px; line-height: 1.2; direction: ltr; }
+        .modal-actions { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
     </style>
 </head>
 <body>
+    <nav class="game-nav">
+        <a href="index.html" class="game-nav-link">Pips</a>
+        <a href="connections.html" class="game-nav-link active">חיבורים</a>
+        <a href="kenken.html" class="game-nav-link">קנקן</a>
+    </nav>
 
-<!-- Navigation -->
-<nav class="top-nav">
-    <a href="index.html">Pips</a>
-    <a href="connections.html" class="active">Connections</a>
-    <a href="kenken.html">KenKen</a>
-</nav>
+    <div class="container">
+        <header>
+            <h1>חיבורים</h1>
+            <p>מצאו 4 קבוצות של 4 מילים עם קשר משותף</p>
+        </header>
 
-<!-- Header -->
-<header class="header">
-    <div class="header-center">
-        <h1 class="logo">Connections</h1>
-        <p class="tagline">Group the words that share a common thread</p>
-    </div>
-</header>
+        <div class="home-screen" id="homeScreen">
+            <div class="age-cards" id="ageCards"></div>
+        </div>
 
-<!-- Toast -->
-<div class="toast" id="toast"></div>
+        <div class="stage-screen" id="stageScreen">
+            <div class="stage-header">
+                <button class="back-btn" id="backToHome">→ חזרה</button>
+                <span id="stageTitle" style="font-weight:700;"></span>
+            </div>
+            <div class="stages-grid" id="stagesGrid"></div>
+        </div>
 
-<!-- Game -->
-<div class="game-container">
-    <div class="info-bar">
-        <span class="puzzle-num" id="puzzleNum">Puzzle #1</span>
-        <span>
-            <button class="btn" id="helpBtn" style="padding:6px 14px;font-size:12px;margin-right:6px;" title="How to Play">?</button>
-            <span class="timer" id="timer">0:00</span>
-        </span>
-    </div>
-
-    <div class="solved-area" id="solvedArea"></div>
-    <div class="grid" id="grid"></div>
-
-    <div class="mistakes-area">
-        <span>Mistakes remaining:</span>
-        <div class="mistake-dots" id="mistakeDots">
-            <div class="mistake-dot"></div>
-            <div class="mistake-dot"></div>
-            <div class="mistake-dot"></div>
-            <div class="mistake-dot"></div>
+        <div class="game-screen" id="gameScreen">
+            <div class="toolbar">
+                <span class="puzzle-label" id="puzzleLabel"></span>
+                <span class="timer" id="timer">0:00</span>
+                <div class="mistakes-display">
+                    <span class="mistake-dot" id="m3"></span>
+                    <span class="mistake-dot" id="m2"></span>
+                    <span class="mistake-dot" id="m1"></span>
+                    <span class="mistake-dot" id="m0"></span>
+                </div>
+            </div>
+            <div class="solved-groups" id="solvedGroups"></div>
+            <div class="message" id="message"></div>
+            <div class="word-grid" id="wordGrid"></div>
+            <div class="actions">
+                <button class="btn btn-outline" id="backToStages2">חזרה</button>
+                <button class="btn btn-outline" id="shuffleBtn">ערבוב</button>
+                <button class="btn btn-primary" id="submitBtn" disabled>בדיקה</button>
+            </div>
         </div>
     </div>
 
-    <div class="btn-row" id="actionBtns">
-        <button class="btn" id="shuffleBtn">Shuffle</button>
-        <button class="btn" id="deselectBtn">Deselect All</button>
-        <button class="btn primary" id="submitBtn" disabled>Submit</button>
-    </div>
-
-    <div class="end-screen" id="endScreen">
-        <div class="end-title" id="endTitle"></div>
-        <div class="end-subtitle" id="endSubtitle"></div>
-        <div class="results-grid" id="resultsGrid"></div>
-        <div class="end-btns">
-            <button class="btn" id="shareBtn">Share Results</button>
-            <button class="btn primary" id="nextPuzzleBtn">Next Puzzle</button>
+    <div class="modal-overlay" id="gameOverOverlay">
+        <div class="modal">
+            <h2 id="endTitle"></h2>
+            <p id="endMessage"></p>
+            <div class="result-grid" id="resultGrid"></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="shareBtn">שיתוף</button>
+                <button class="btn btn-primary" id="nextBtn">שלב הבא</button>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- How to Play Modal -->
-<div class="modal-overlay" id="helpModal">
-    <div class="modal">
-        <h2>How to Play</h2>
-        <p>Find groups of four items that share something in common.</p>
-        <ul>
-            <li>Select four words and tap <strong>Submit</strong> to check if they form a group.</li>
-            <li>Find all four groups without making 4 mistakes.</li>
-        </ul>
-        <p><strong>Difficulty:</strong></p>
-        <div class="color-key">
-            <div class="color-key-item"><div class="color-swatch" style="background:var(--yellow)"></div> Yellow - Straightforward</div>
-            <div class="color-key-item"><div class="color-swatch" style="background:var(--green)"></div> Green - Moderate</div>
-            <div class="color-key-item"><div class="color-swatch" style="background:var(--blue)"></div> Blue - Tricky</div>
-            <div class="color-key-item"><div class="color-swatch" style="background:var(--purple)"></div> Purple - Devious</div>
-        </div>
-        <p>Each puzzle has exactly one solution. Good luck!</p>
-        <button class="modal-close" id="helpClose">Got it</button>
-    </div>
-</div>
+    <script>
+    const AGE_GROUPS = [
+        { id: 'age7', label: 'גיל 7+', icon: '🧒', desc: 'מילים פשוטות וקטגוריות ברורות' },
+        { id: 'age10', label: 'גיל 10+', icon: '🧑', desc: 'קטגוריות מגוונות יותר' },
+        { id: 'age13', label: 'גיל 13+', icon: '🧑‍🎓', desc: 'קשרים מפתיעים וטריקים' },
+        { id: 'age16', label: 'גיל 16+', icon: '🎓', desc: 'אתגר למתקדמים' }
+    ];
 
-<script>
-// ============ PUZZLE DATA ============
-const PUZZLES = [
-    {
-        groups: [
-            { category: "TYPES OF BREAD", difficulty: 0, words: ["SOURDOUGH","RYE","PUMPERNICKEL","BRIOCHE"] },
-            { category: "PLANETS", difficulty: 1, words: ["MARS","VENUS","SATURN","JUPITER"] },
-            { category: "CARD GAMES", difficulty: 2, words: ["POKER","BRIDGE","SOLITAIRE","RUMMY"] },
-            { category: "___BOARD", difficulty: 3, words: ["SKATE","CARD","KEY","DART"] }
+    const PUZZLES = {
+        age7: [
+            { groups: [
+                { category: "חיות משק", words: ["פרה","תרנגולת","כבשה","חזיר"], difficulty: 0 },
+                { category: "פירות", words: ["תפוח","בננה","ענבים","אבטיח"], difficulty: 1 },
+                { category: "צבעים", words: ["אדום","כחול","ירוק","צהוב"], difficulty: 2 },
+                { category: "כלי בית ספר", words: ["עיפרון","מחברת","סרגל","מחק"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "חיות ג'ונגל", words: ["אריה","קוף","פיל","ג'ירפה"], difficulty: 0 },
+                { category: "ירקות", words: ["גזר","מלפפון","עגבנייה","חסה"], difficulty: 1 },
+                { category: "חלקי גוף", words: ["ראש","יד","רגל","בטן"], difficulty: 2 },
+                { category: "כלי תחבורה", words: ["מכונית","אוטובוס","רכבת","מטוס"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "עונות השנה", words: ["קיץ","חורף","סתיו","אביב"], difficulty: 0 },
+                { category: "בגדים", words: ["חולצה","מכנסיים","שמלה","כובע"], difficulty: 1 },
+                { category: "ריהוט", words: ["כיסא","שולחן","מיטה","ספה"], difficulty: 2 },
+                { category: "משחקים", words: ["כדורגל","מחבואים","קופסה","תופסת"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "ימים בשבוע", words: ["ראשון","שני","שלישי","שבת"], difficulty: 0 },
+                { category: "חיות ים", words: ["דג","דולפין","כריש","צב"], difficulty: 1 },
+                { category: "מאכלים מתוקים", words: ["שוקולד","עוגה","סוכריה","גלידה"], difficulty: 2 },
+                { category: "דברים בשמיים", words: ["שמש","ירח","כוכב","ענן"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "כלי נגינה", words: ["גיטרה","פסנתר","תוף","חליל"], difficulty: 0 },
+                { category: "ספורט", words: ["שחייה","ריצה","טניס","כדורסל"], difficulty: 1 },
+                { category: "מקצועות", words: ["רופא","מורה","שוטר","טבח"], difficulty: 2 },
+                { category: "חדרים בבית", words: ["סלון","מטבח","חדר","מרפסת"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "פרחים", words: ["ורד","חמנייה","כלנית","רקפת"], difficulty: 0 },
+                { category: "חרקים", words: ["פרפר","נמלה","דבורה","חיפושית"], difficulty: 1 },
+                { category: "מזג אוויר", words: ["גשם","שלג","רוח","ברק"], difficulty: 2 },
+                { category: "צורות", words: ["עיגול","ריבוע","משולש","מלבן"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "עצים", words: ["אלון","ברוש","תמר","זית"], difficulty: 0 },
+                { category: "ציפורים", words: ["יונה","נשר","תוכי","ינשוף"], difficulty: 1 },
+                { category: "חגים", words: ["פסח","פורים","חנוכה","סוכות"], difficulty: 2 },
+                { category: "חומרי לימוד", words: ["חשבון","עברית","מדעים","אנגלית"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "משקאות", words: ["מים","חלב","מיץ","קקאו"], difficulty: 0 },
+                { category: "כלי מטבח", words: ["סיר","מחבת","סכין","כף"], difficulty: 1 },
+                { category: "חיות מחמד", words: ["כלב","חתול","אוגר","דג"], difficulty: 2 },
+                { category: "אותיות ראשונות", words: ["אלף","בית","גימל","דלת"], difficulty: 3 }
+            ]}
+        ],
+        age10: [
+            { groups: [
+                { category: "ערים בישראל", words: ["תל-אביב","חיפה","ירושלים","אילת"], difficulty: 0 },
+                { category: "כוכבי לכת", words: ["מאדים","נוגה","שבתאי","צדק"], difficulty: 1 },
+                { category: "סוגי גבינה", words: ["צהובה","קוטג","שמנת","מוצרלה"], difficulty: 2 },
+                { category: "___ים (מילה + ים)", words: ["שמ","ירושל","מכנס","זמנ"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "מדינות", words: ["צרפת","יפן","ברזיל","מצרים"], difficulty: 0 },
+                { category: "כלי כתיבה", words: ["עט","טוש","דיו","גיר"], difficulty: 1 },
+                { category: "ענפי ספורט", words: ["ג'ודו","קראטה","טאקוונדו","אייקידו"], difficulty: 2 },
+                { category: "מילים עם כפל", words: ["אבאבא","ביסקוויט","פפאיה","ממתק"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "בעלי חיים מהמקרא", words: ["נחש","עורב","חמור","כבשה"], difficulty: 0 },
+                { category: "סוגי מוזיקה", words: ["רוק","פופ","ג'אז","ראפ"], difficulty: 1 },
+                { category: "ארוחות", words: ["בוקר","צהריים","ערב","עשר"], difficulty: 2 },
+                { category: "גם מספר וגם שם", words: ["שבע","חמש","שש","ארבע"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "ירושלים", words: ["כותל","הר","עיר","מקדש"], difficulty: 0 },
+                { category: "חומרים", words: ["ברזל","זהב","כסף","נחושת"], difficulty: 1 },
+                { category: "משחקי קופסה", words: ["מונופול","שש-בש","דמקה","שחמט"], difficulty: 2 },
+                { category: "מילים הפוכות", words: ["בוט","בלכ","האר","רפס"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "ירקות שורש", words: ["בטטה","גזר","צנונית","סלק"], difficulty: 0 },
+                { category: "אביזרי ים", words: ["מגבת","קרם","משקפת","סנפירים"], difficulty: 1 },
+                { category: "סוגי ספרים", words: ["רומן","מתח","מדע","פנטזיה"], difficulty: 2 },
+                { category: "מילים שמתחילות ב-ש", words: ["שולחן","שוקולד","שמלה","שעון"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "דמויות תנ\"ך", words: ["משה","דוד","אברהם","יוסף"], difficulty: 0 },
+                { category: "מדינות אירופה", words: ["ספרד","איטליה","גרמניה","אנגליה"], difficulty: 1 },
+                { category: "סוגי מכוניות", words: ["יונדאי","טויוטה","מזדה","סובארו"], difficulty: 2 },
+                { category: "מילים שנגמרות ב-ה", words: ["שירה","בימה","כריכה","מנורה"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "כלי עבודה", words: ["פטיש","מברג","מסור","מקדחה"], difficulty: 0 },
+                { category: "אפליקציות", words: ["וואטסאפ","אינסטגרם","טיקטוק","יוטיוב"], difficulty: 1 },
+                { category: "סוגי לחם", words: ["פיתה","בגט","חלה","לחמניה"], difficulty: 2 },
+                { category: "מילים עם אות כפולה", words: ["סבבה","ביצוצים","ככה","אללה"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "ימי חג", words: ["פורים","חנוכה","פסח","שבועות"], difficulty: 0 },
+                { category: "סוגי נעליים", words: ["סניקרס","סנדל","מגף","כפכף"], difficulty: 1 },
+                { category: "מושגים במתמטיקה", words: ["חיבור","חיסור","כפל","חילוק"], difficulty: 2 },
+                { category: "צבעים באנגלית", words: ["רד","בלו","גרין","ווייט"], difficulty: 3 }
+            ]}
+        ],
+        age13: [
+            { groups: [
+                { category: "בירות עולם", words: ["פריז","לונדון","טוקיו","ברלין"], difficulty: 0 },
+                { category: "זמרים ישראלים", words: ["עומר","נועה","אייל","שירי"], difficulty: 1 },
+                { category: "מילים שלניות", words: ["פלפל","גלגל","דגדג","שרשר"], difficulty: 2 },
+                { category: "גם שם פרטי וגם מילה", words: ["גל","טל","רון","שחר"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "רשתות מזון", words: ["מקדונלדס","בורגר","פיצה","סושי"], difficulty: 0 },
+                { category: "מושגים בפיזיקה", words: ["כוח","מהירות","תאוצה","מסה"], difficulty: 1 },
+                { category: "סלנג ישראלי", words: ["אחלה","סבבה","יאללה","חלאס"], difficulty: 2 },
+                { category: "___ון (מילה + ון)", words: ["טלפ","טלוויזי","עית","זיכר"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "סדרות טלוויזיה", words: ["פאודה","שטיסל","בנות","מלכודת"], difficulty: 0 },
+                { category: "סגנונות אומנות", words: ["רנסנס","בארוק","מודרני","פופ"], difficulty: 1 },
+                { category: "יסודות כימיים", words: ["חמצן","מימן","פחמן","ברזל"], difficulty: 2 },
+                { category: "הפוך מ...", words: ["קטן","חשוך","עצוב","קר"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "מותגי אופנה", words: ["נייקי","אדידס","זארה","פומה"], difficulty: 0 },
+                { category: "סוגי ענן", words: ["קומולוס","סירוס","סטרטוס","נימבוס"], difficulty: 1 },
+                { category: "מילים לועזיות בעברית", words: ["טלפון","אוטובוס","טלוויזיה","רדיו"], difficulty: 2 },
+                { category: "ראשי תיבות", words: ["צהל","רמבם","תנך","חנה"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "ממציאים", words: ["אדיסון","טסלה","בל","מורס"], difficulty: 0 },
+                { category: "שפות תכנות", words: ["פייתון","ג'אווה","סי","רובי"], difficulty: 1 },
+                { category: "סוגי ריקוד", words: ["סלסה","טנגו","ואלס","היפהופ"], difficulty: 2 },
+                { category: "מילים שקוראים אותן אותו דבר הפוך", words: ["אבא","אמא","עלע","ניין"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "רשתות חברתיות", words: ["פייסבוק","טוויטר","סנאפצ'ט","לינקדאין"], difficulty: 0 },
+                { category: "סוגי ספרות", words: ["שירה","פרוזה","דרמה","סאטירה"], difficulty: 1 },
+                { category: "מערכות בגוף", words: ["עיכול","נשימה","דם","עצבים"], difficulty: 2 },
+                { category: "מילים עם שני משמעויות", words: ["כתר","גשר","עין","ציפור"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "תבלינים", words: ["כמון","פפריקה","כורכום","קינמון"], difficulty: 0 },
+                { category: "מכשירים חשמליים", words: ["מקרר","מכונת","מדיח","תנור"], difficulty: 1 },
+                { category: "מדינות אסיה", words: ["סין","הודו","תאילנד","קוריאה"], difficulty: 2 },
+                { category: "שמות עם משמעות בטבע", words: ["ורד","אילן","טל","גלי"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "סגנונות מוזיקה", words: ["רגאיי","טראנס","בלוז","סול"], difficulty: 0 },
+                { category: "אלמנטים", words: ["אש","מים","אדמה","רוח"], difficulty: 1 },
+                { category: "מילים מערבית", words: ["יאללה","חביבי","וואלה","סבבה"], difficulty: 2 },
+                { category: "מילים שמשנות משמעות עם נקודות", words: ["דבר","ספר","בקר","שמר"], difficulty: 3 }
+            ]}
+        ],
+        age16: [
+            { groups: [
+                { category: "פילוסופים", words: ["אריסטו","קאנט","ניטשה","סוקרטס"], difficulty: 0 },
+                { category: "תיאוריות מדעיות", words: ["יחסות","אבולוציה","קוונטים","כאוס"], difficulty: 1 },
+                { category: "סופרים עבריים", words: ["עגנון","עוז","יהושע","גרוסמן"], difficulty: 2 },
+                { category: "מילים שהן גם שם עיר", words: ["באר","חדרה","עפולה","רמלה"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "כלכלה", words: ["אינפלציה","ריבית","מניה","תוצר"], difficulty: 0 },
+                { category: "ז'אנרים קולנועיים", words: ["נואר","דוקו","וסטרן","מותחן"], difficulty: 1 },
+                { category: "מושגים משפטיים", words: ["ערעור","תביעה","גזר","סנגור"], difficulty: 2 },
+                { category: "פועל בעבר שנשמע כמו שם עצם", words: ["שמר","זכר","עבר","גדר"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "אדריכלים", words: ["גאודי","פוסטר","הדיד","פיאנו"], difficulty: 0 },
+                { category: "מושגים בפסיכולוגיה", words: ["טראומה","הדחקה","הקרנה","סובלימציה"], difficulty: 1 },
+                { category: "משוררים עבריים", words: ["ביאליק","רחל","לאה","עמיחי"], difficulty: 2 },
+                { category: "מילים שאפשר להוסיף להן 'ות'", words: ["אחרי","מנהיג","חבר","אנושי"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "ציירים מפורסמים", words: ["פיקאסו","מונה","דאלי","גויה"], difficulty: 0 },
+                { category: "מושגים פוליטיים", words: ["דמוקרטיה","קואליציה","אופוזיציה","ריבונות"], difficulty: 1 },
+                { category: "מילים יווניות בעברית", words: ["דמוקרטיה","פילוסופיה","טכנולוגיה","אקדמיה"], difficulty: 2 },
+                { category: "ביטויים מהתנך", words: ["עקב","מגדל","תבל","אדמה"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "תנועות אמנותיות", words: ["סוריאליזם","אימפרסיוניזם","קוביזם","דאדא"], difficulty: 0 },
+                { category: "מושגים בביולוגיה", words: ["מיטוזה","סינתזה","אוסמוזה","פוטוזה"], difficulty: 1 },
+                { category: "מלחינים", words: ["באך","מוצרט","בטהובן","שופן"], difficulty: 2 },
+                { category: "מספרים בעברית עתיקה", words: ["י","כ","ל","מ"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "סוגי ממשל", words: ["מלוכה","רפובליקה","דיקטטורה","פדרציה"], difficulty: 0 },
+                { category: "מושגי סטטיסטיקה", words: ["ממוצע","חציון","שונות","סטייה"], difficulty: 1 },
+                { category: "במאי קולנוע ישראלי", words: ["פולנסקי","גיתאי","לפיד","מעוז"], difficulty: 2 },
+                { category: "מילים לטיניות", words: ["אד-הוק","פר-סה","דה-פקטו","אט-סטטוס"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "מדענים", words: ["איינשטיין","הוקינג","דארווין","ניוטון"], difficulty: 0 },
+                { category: "מושגים בהיסטוריה", words: ["רנסנס","נאורות","רפורמציה","מהפכה"], difficulty: 1 },
+                { category: "סופרים עולמיים", words: ["דוסטויבסקי","קפקא","אורוול","המינגוויי"], difficulty: 2 },
+                { category: "מילים פרדוקסליות", words: ["שקט","רועש","מתוק","מר"], difficulty: 3 }
+            ]},
+            { groups: [
+                { category: "מכשירי מדידה", words: ["מד-חום","ברומטר","וולטמטר","ספקטרומטר"], difficulty: 0 },
+                { category: "מונחי מחשב", words: ["אלגוריתם","פיקסל","ביט","סרבר"], difficulty: 1 },
+                { category: "ביטויי סלנג", words: ["פדיחה","חפירה","פספוס","שטויות"], difficulty: 2 },
+                { category: "אנגרמות של מילים עבריות", words: ["רפס","בלכ","תיב","ךלמ"], difficulty: 3 }
+            ]}
         ]
-    },
-    {
-        groups: [
-            { category: "FRUITS", difficulty: 0, words: ["MANGO","KIWI","PLUM","FIG"] },
-            { category: "MUSIC GENRES", difficulty: 1, words: ["JAZZ","BLUES","ROCK","POP"] },
-            { category: "TYPES OF DANCE", difficulty: 2, words: ["SALSA","WALTZ","TANGO","SWING"] },
-            { category: "DOUBLE LETTERS", difficulty: 3, words: ["COFFEE","TOFFEE","COMMITTEE","BALLOON"] }
-        ]
-    },
-    {
-        groups: [
-            { category: "COLORS", difficulty: 0, words: ["CRIMSON","IVORY","NAVY","JADE"] },
-            { category: "CHESS PIECES", difficulty: 1, words: ["ROOK","BISHOP","KNIGHT","PAWN"] },
-            { category: "GREEK GODS", difficulty: 2, words: ["ZEUS","APOLLO","HERMES","ARES"] },
-            { category: "ALSO A CAR BRAND", difficulty: 3, words: ["LINCOLN","BENTLEY","FORD","DODGE"] }
-        ]
-    },
-    {
-        groups: [
-            { category: "WEATHER", difficulty: 0, words: ["THUNDER","HAIL","BLIZZARD","DRIZZLE"] },
-            { category: "PASTA SHAPES", difficulty: 1, words: ["PENNE","FUSILLI","RIGATONI","ORZO"] },
-            { category: "DANCES", difficulty: 2, words: ["FOXTROT","MAMBO","RUMBA","CHA-CHA"] },
-            { category: "STARTS WITH A BODY PART", difficulty: 3, words: ["KNEECAP","EYEBROW","THUMBNAIL","EARRING"] }
-        ]
-    },
-    {
-        groups: [
-            { category: "DOGS", difficulty: 0, words: ["POODLE","BEAGLE","HUSKY","CORGI"] },
-            { category: "CURRENCIES", difficulty: 1, words: ["DOLLAR","EURO","POUND","YEN"] },
-            { category: "ELEMENTS", difficulty: 2, words: ["GOLD","SILVER","IRON","COPPER"] },
-            { category: "OLYMPIC SPORTS", difficulty: 3, words: ["FENCING","ROWING","ARCHERY","DIVING"] }
-        ]
-    },
-    {
-        groups: [
-            { category: "TREES", difficulty: 0, words: ["MAPLE","OAK","PINE","BIRCH"] },
-            { category: "SPICES", difficulty: 1, words: ["CUMIN","SAGE","THYME","BASIL"] },
-            { category: "FABRICS", difficulty: 2, words: ["SILK","LINEN","DENIM","VELVET"] },
-            { category: "ALSO A NAME", difficulty: 3, words: ["HAZEL","GRACE","JASMINE","HOLLY"] }
-        ]
-    },
-    {
-        groups: [
-            { category: "BREAKFAST ITEMS", difficulty: 0, words: ["WAFFLE","PANCAKE","OMELETTE","CROISSANT"] },
-            { category: "OCEAN CREATURES", difficulty: 1, words: ["OCTOPUS","DOLPHIN","SEAHORSE","JELLYFISH"] },
-            { category: "BOARD GAMES", difficulty: 2, words: ["MONOPOLY","CLUE","RISK","SCRABBLE"] },
-            { category: "THINGS THAT SPIN", difficulty: 3, words: ["TORNADO","DRYER","RECORD","TURBINE"] }
-        ]
-    },
-    {
-        groups: [
-            { category: "GEMSTONES", difficulty: 0, words: ["RUBY","PEARL","OPAL","TOPAZ"] },
-            { category: "TOOLS", difficulty: 1, words: ["HAMMER","WRENCH","DRILL","PLIERS"] },
-            { category: "FAMOUS SCIENTISTS", difficulty: 2, words: ["DARWIN","NEWTON","TESLA","CURIE"] },
-            { category: "WORDS BEFORE FLY", difficulty: 3, words: ["BUTTER","MAY","FIRE","BAR"] }
-        ]
-    },
-    {
-        groups: [
-            { category: "VEGETABLES", difficulty: 0, words: ["CARROT","CELERY","RADISH","TURNIP"] },
-            { category: "INSTRUMENTS", difficulty: 1, words: ["VIOLIN","CELLO","FLUTE","OBOE"] },
-            { category: "MYTHICAL CREATURES", difficulty: 2, words: ["DRAGON","PHOENIX","GRIFFIN","UNICORN"] },
-            { category: "ANAGRAM OF A NUMBER", difficulty: 3, words: ["ENON","OWTS","VIFE","NITE"] }
-        ]
-    },
-    {
-        groups: [
-            { category: "BAKED GOODS", difficulty: 0, words: ["MUFFIN","SCONE","PRETZEL","BAGEL"] },
-            { category: "SPACE TERMS", difficulty: 1, words: ["COMET","NEBULA","QUASAR","PULSAR"] },
-            { category: "MARTIAL ARTS", difficulty: 2, words: ["JUDO","KARATE","AIKIDO","BOXING"] },
-            { category: "SILENT LETTER", difficulty: 3, words: ["KNIGHT","PSALM","GNOME","WREATH"] }
-        ]
+    };
+
+    const COLORS = ['yellow','green','blue','purple'];
+    const EMOJIS = ['🟨','🟩','🟦','🟪'];
+
+    let currentAge = null, currentLevel = 0;
+    let selected = [], mistakes = 0, solvedGroups = [], guessHistory = [], remainingWords = [];
+    let timerInterval, startTime;
+
+    function init() {
+        renderHome();
+        document.getElementById('shuffleBtn').addEventListener('click', shuffleWords);
+        document.getElementById('submitBtn').addEventListener('click', submitGuess);
+        document.getElementById('shareBtn').addEventListener('click', shareResult);
+        document.getElementById('nextBtn').addEventListener('click', nextPuzzle);
+        document.getElementById('backToHome').addEventListener('click', renderHome);
+        document.getElementById('backToStages2').addEventListener('click', () => showStages(currentAge));
     }
-];
 
-const DIFF_CLASSES = ["yellow","green","blue","purple"];
-const DIFF_EMOJI = ["🟨","🟩","🟦","🟪"];
-
-// ============ STATE ============
-let currentPuzzle = 0;
-let selected = new Set();
-let mistakes = 0;
-let maxMistakes = 4;
-let solvedGroups = [];
-let remainingWords = [];
-let timerInterval = null;
-let seconds = 0;
-let gameOver = false;
-let guessHistory = []; // for share results
-let previousGuesses = []; // track previous wrong guesses to prevent duplicates
-
-// ============ DOM ============
-const gridEl = document.getElementById("grid");
-const solvedAreaEl = document.getElementById("solvedArea");
-const submitBtn = document.getElementById("submitBtn");
-const shuffleBtn = document.getElementById("shuffleBtn");
-const deselectBtn = document.getElementById("deselectBtn");
-const mistakeDotsEl = document.getElementById("mistakeDots");
-const timerEl = document.getElementById("timer");
-const puzzleNumEl = document.getElementById("puzzleNum");
-const toastEl = document.getElementById("toast");
-const endScreenEl = document.getElementById("endScreen");
-const endTitleEl = document.getElementById("endTitle");
-const endSubtitleEl = document.getElementById("endSubtitle");
-const resultsGridEl = document.getElementById("resultsGrid");
-const shareBtn = document.getElementById("shareBtn");
-const nextPuzzleBtn = document.getElementById("nextPuzzleBtn");
-const helpBtn = document.getElementById("helpBtn");
-const helpModal = document.getElementById("helpModal");
-const helpClose = document.getElementById("helpClose");
-const actionBtnsEl = document.getElementById("actionBtns");
-
-// ============ INIT ============
-function initPuzzle(idx) {
-    currentPuzzle = idx;
-    const puzzle = PUZZLES[idx];
-    selected.clear();
-    mistakes = 0;
-    solvedGroups = [];
-    gameOver = false;
-    guessHistory = [];
-    previousGuesses = [];
-    seconds = 0;
-
-    // Collect all words
-    remainingWords = [];
-    puzzle.groups.forEach(g => {
-        g.words.forEach(w => remainingWords.push(w));
-    });
-    shuffle(remainingWords);
-
-    // Reset UI
-    puzzleNumEl.textContent = `Puzzle #${idx + 1}`;
-    solvedAreaEl.innerHTML = "";
-    endScreenEl.classList.remove("show");
-    actionBtnsEl.style.display = "flex";
-    updateMistakeDots();
-    renderGrid();
-    updateSubmitBtn();
-    startTimer();
-}
-
-function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-}
-
-// ============ RENDER ============
-function renderGrid() {
-    gridEl.innerHTML = "";
-    remainingWords.forEach(word => {
-        const tile = document.createElement("div");
-        tile.className = "tile" + (selected.has(word) ? " selected" : "");
-        tile.textContent = word;
-        tile.addEventListener("click", () => toggleSelect(word));
-        gridEl.appendChild(tile);
-    });
-}
-
-function toggleSelect(word) {
-    if (gameOver) return;
-    if (selected.has(word)) {
-        selected.delete(word);
-    } else {
-        if (selected.size >= 4) return;
-        selected.add(word);
-    }
-    renderGrid();
-    updateSubmitBtn();
-}
-
-function updateSubmitBtn() {
-    submitBtn.disabled = selected.size !== 4;
-}
-
-function updateMistakeDots() {
-    const dots = mistakeDotsEl.querySelectorAll(".mistake-dot");
-    dots.forEach((dot, i) => {
-        dot.classList.toggle("used", i >= (maxMistakes - mistakes));
-    });
-}
-
-// ============ SUBMIT ============
-submitBtn.addEventListener("click", () => {
-    if (selected.size !== 4 || gameOver) return;
-
-    const guess = Array.from(selected);
-    const guessKey = [...guess].sort().join(",");
-
-    // Check if already guessed
-    if (previousGuesses.includes(guessKey)) {
-        showToast("Already guessed!");
-        return;
-    }
-    previousGuesses.push(guessKey);
-
-    const puzzle = PUZZLES[currentPuzzle];
-
-    // Find best matching group
-    let bestMatch = null;
-    let bestCount = 0;
-    puzzle.groups.forEach(g => {
-        if (solvedGroups.includes(g)) return;
-        const count = guess.filter(w => g.words.includes(w)).length;
-        if (count > bestCount) {
-            bestCount = count;
-            bestMatch = g;
-        }
-    });
-
-    if (bestCount === 4) {
-        // Correct!
-        solvedGroups.push(bestMatch);
-        guessHistory.push({ group: bestMatch, correct: true });
-
-        // Animate tiles out then reveal
-        const tiles = gridEl.querySelectorAll(".tile");
-        tiles.forEach(t => {
-            if (guess.includes(t.textContent)) {
-                t.classList.add("pop-out");
-            }
-        });
-
-        setTimeout(() => {
-            remainingWords = remainingWords.filter(w => !guess.includes(w));
-            selected.clear();
-            addSolvedBanner(bestMatch);
-            renderGrid();
-            updateSubmitBtn();
-
-            if (solvedGroups.length === 4) {
-                endGame(true);
-            }
-        }, 350);
-    } else {
-        // Wrong guess
-        mistakes++;
-        guessHistory.push({ guess: guess, correct: false, bestMatch: bestMatch, bestCount: bestCount });
-        updateMistakeDots();
-
-        // Show feedback
-        if (bestCount === 3) {
-            showToast("One away!");
-        } else {
-            showToast("Try again...");
-        }
-
-        // Shake selected tiles
-        const tiles = gridEl.querySelectorAll(".tile.selected");
-        tiles.forEach(t => {
-            t.classList.add("shake");
-            setTimeout(() => t.classList.remove("shake"), 500);
-        });
-
-        if (mistakes >= maxMistakes) {
-            // Reveal all remaining groups
-            setTimeout(() => {
-                revealAll();
-                endGame(false);
-            }, 800);
-        }
-    }
-});
-
-function addSolvedBanner(group) {
-    const div = document.createElement("div");
-    div.className = `solved-group ${DIFF_CLASSES[group.difficulty]}`;
-    div.innerHTML = `
-        <div class="solved-category">${group.category}</div>
-        <div class="solved-words">${group.words.join(", ")}</div>
-    `;
-    solvedAreaEl.appendChild(div);
-}
-
-function revealAll() {
-    const puzzle = PUZZLES[currentPuzzle];
-    puzzle.groups.forEach(g => {
-        if (!solvedGroups.includes(g)) {
-            solvedGroups.push(g);
-            addSolvedBanner(g);
-        }
-    });
-    remainingWords = [];
-    gridEl.innerHTML = "";
-    selected.clear();
-}
-
-// ============ END GAME ============
-function endGame(won) {
-    gameOver = true;
-    stopTimer();
-    actionBtnsEl.style.display = "none";
-
-    endTitleEl.textContent = won ? "Well done!" : "Better luck next time";
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    endSubtitleEl.textContent = won
-        ? `Solved in ${mins}:${secs.toString().padStart(2,"0")} with ${mistakes} mistake${mistakes !== 1 ? "s" : ""}`
-        : `${solvedGroups.length - (4 - PUZZLES[currentPuzzle].groups.filter(g => guessHistory.some(h => h.correct && h.group === g)).length)} groups found`;
-
-    // Build results emoji grid
-    buildResultsEmoji();
-
-    endScreenEl.classList.add("show");
-}
-
-function buildResultsEmoji() {
-    resultsGridEl.innerHTML = "";
-    const puzzle = PUZZLES[currentPuzzle];
-
-    guessHistory.forEach(entry => {
-        const row = document.createElement("div");
-        if (entry.correct) {
-            const emoji = DIFF_EMOJI[entry.group.difficulty];
-            row.textContent = emoji + emoji + emoji + emoji;
-        } else {
-            // For wrong guesses, show the difficulty of each selected word
-            let emojis = "";
-            entry.guess.forEach(word => {
-                const g = puzzle.groups.find(gr => gr.words.includes(word));
-                emojis += DIFF_EMOJI[g.difficulty];
-            });
-            row.textContent = emojis;
-        }
-        resultsGridEl.appendChild(row);
-    });
-
-    // Also show auto-solved groups at the end (the ones revealed after losing)
-    if (mistakes >= maxMistakes) {
-        puzzle.groups.forEach(g => {
-            if (!guessHistory.some(h => h.correct && h.group === g)) {
-                // This group was auto-revealed, don't add emoji row for it
-            }
+    function renderHome() {
+        document.getElementById('homeScreen').classList.remove('hidden');
+        document.getElementById('stageScreen').classList.remove('active');
+        document.getElementById('gameScreen').classList.remove('active');
+        const container = document.getElementById('ageCards');
+        container.innerHTML = '';
+        AGE_GROUPS.forEach(ag => {
+            const puzzles = PUZZLES[ag.id];
+            const progress = loadProgress();
+            const solved = puzzles.filter((_, i) => progress[`${ag.id}-${i}`]).length;
+            const card = document.createElement('div');
+            card.className = 'age-card';
+            card.innerHTML = `<div class="age-icon">${ag.icon}</div><h3>${ag.label}</h3><p>${ag.desc}</p><div class="count">${solved}/${puzzles.length} פתורים</div>`;
+            card.addEventListener('click', () => showStages(ag.id));
+            container.appendChild(card);
         });
     }
-}
 
-// ============ SHARE ============
-shareBtn.addEventListener("click", () => {
-    const puzzle = PUZZLES[currentPuzzle];
-    let text = `Connections Puzzle #${currentPuzzle + 1}\n`;
+    function showStages(ageId) {
+        currentAge = ageId;
+        const ag = AGE_GROUPS.find(a => a.id === ageId);
+        document.getElementById('homeScreen').classList.add('hidden');
+        document.getElementById('stageScreen').classList.add('active');
+        document.getElementById('gameScreen').classList.remove('active');
+        document.getElementById('stageTitle').textContent = ag.label;
+        const grid = document.getElementById('stagesGrid');
+        grid.innerHTML = '';
+        const puzzles = PUZZLES[ageId];
+        const progress = loadProgress();
+        puzzles.forEach((_, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'stage-btn' + (progress[`${ageId}-${i}`] ? ' solved' : '');
+            btn.textContent = i + 1;
+            btn.addEventListener('click', () => startGame(ageId, i));
+            grid.appendChild(btn);
+        });
+    }
 
-    guessHistory.forEach(entry => {
-        if (entry.correct) {
-            const emoji = DIFF_EMOJI[entry.group.difficulty];
-            text += emoji + emoji + emoji + emoji + "\n";
-        } else {
-            entry.guess.forEach(word => {
-                const g = puzzle.groups.find(gr => gr.words.includes(word));
-                text += DIFF_EMOJI[g.difficulty];
-            });
-            text += "\n";
-        }
-    });
+    function startGame(ageId, level) {
+        currentAge = ageId; currentLevel = level;
+        mistakes = 0; selected = []; solvedGroups = []; guessHistory = [];
+        const puzzle = PUZZLES[ageId][level];
+        remainingWords = puzzle.groups.flatMap(g => [...g.words]);
+        shuffleWords();
+        document.getElementById('homeScreen').classList.add('hidden');
+        document.getElementById('stageScreen').classList.remove('active');
+        document.getElementById('gameScreen').classList.add('active');
+        const ag = AGE_GROUPS.find(a => a.id === ageId);
+        document.getElementById('puzzleLabel').textContent = `${ag.label} • שלב ${level + 1}`;
+        document.getElementById('message').textContent = '';
+        document.getElementById('solvedGroups').innerHTML = '';
+        document.getElementById('gameOverOverlay').classList.remove('active');
+        updateMistakes();
+        render();
+        startTimer();
+    }
 
-    navigator.clipboard.writeText(text.trim()).then(() => {
-        showToast("Copied to clipboard!");
-    }).catch(() => {
-        showToast("Could not copy");
-    });
-});
-
-// ============ BUTTONS ============
-shuffleBtn.addEventListener("click", () => {
-    if (gameOver) return;
-    shuffle(remainingWords);
-    renderGrid();
-});
-
-deselectBtn.addEventListener("click", () => {
-    selected.clear();
-    renderGrid();
-    updateSubmitBtn();
-});
-
-nextPuzzleBtn.addEventListener("click", () => {
-    const next = (currentPuzzle + 1) % PUZZLES.length;
-    initPuzzle(next);
-});
-
-// ============ TIMER ============
-function startTimer() {
-    stopTimer();
-    seconds = 0;
-    timerEl.textContent = "0:00";
-    timerInterval = setInterval(() => {
-        seconds++;
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        timerEl.textContent = `${m}:${s.toString().padStart(2, "0")}`;
-    }, 1000);
-}
-
-function stopTimer() {
-    if (timerInterval) {
+    function startTimer() {
         clearInterval(timerInterval);
-        timerInterval = null;
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+            const s = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer').textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+        }, 1000);
     }
-}
 
-// ============ TOAST ============
-function showToast(msg) {
-    toastEl.textContent = msg;
-    toastEl.classList.add("visible");
-    setTimeout(() => toastEl.classList.remove("visible"), 1800);
-}
+    function shuffleWords() {
+        for (let i = remainingWords.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [remainingWords[i], remainingWords[j]] = [remainingWords[j], remainingWords[i]];
+        }
+        render();
+    }
 
-// ============ HELP MODAL ============
-helpBtn.addEventListener("click", () => helpModal.classList.add("show"));
-helpClose.addEventListener("click", () => helpModal.classList.remove("show"));
-helpModal.addEventListener("click", (e) => {
-    if (e.target === helpModal) helpModal.classList.remove("show");
-});
+    function render() {
+        const grid = document.getElementById('wordGrid');
+        grid.innerHTML = '';
+        remainingWords.forEach(word => {
+            const btn = document.createElement('button');
+            btn.className = 'word-cell' + (selected.includes(word) ? ' selected' : '');
+            btn.textContent = word;
+            btn.addEventListener('click', () => {
+                if (selected.includes(word)) selected = selected.filter(w => w !== word);
+                else if (selected.length < 4) selected.push(word);
+                render();
+            });
+            grid.appendChild(btn);
+        });
+        document.getElementById('submitBtn').disabled = selected.length !== 4;
+    }
 
-// ============ START ============
-initPuzzle(0);
-</script>
+    function updateMistakes() {
+        for (let i = 0; i < 4; i++) document.getElementById('m' + i).classList.toggle('used', i < mistakes);
+    }
+
+    function submitGuess() {
+        if (selected.length !== 4) return;
+        const puzzle = PUZZLES[currentAge][currentLevel];
+        const match = puzzle.groups.find(g => g.words.every(w => selected.includes(w)) && g.words.length === 4);
+        if (match) {
+            solvedGroups.push(match);
+            guessHistory.push({ difficulty: match.difficulty, correct: true });
+            remainingWords = remainingWords.filter(w => !selected.includes(w));
+            selected = [];
+            showSolvedGroup(match);
+            render();
+            document.getElementById('message').textContent = '';
+            if (solvedGroups.length === 4) { clearInterval(timerInterval); setTimeout(() => endGame(true), 500); }
+        } else {
+            const close = puzzle.groups.find(g => !solvedGroups.includes(g) && g.words.filter(w => selected.includes(w)).length === 3);
+            mistakes++; updateMistakes();
+            guessHistory.push({ correct: false });
+            document.getElementById('message').textContent = close ? '!קרוב מאוד' : 'לא נכון';
+            document.querySelectorAll('.word-cell.selected').forEach(c => { c.classList.add('shake'); });
+            setTimeout(() => document.querySelectorAll('.shake').forEach(c => c.classList.remove('shake')), 400);
+            if (mistakes >= 4) {
+                clearInterval(timerInterval);
+                setTimeout(() => {
+                    puzzle.groups.filter(g => !solvedGroups.includes(g)).sort((a,b) => a.difficulty - b.difficulty).forEach(g => {
+                        solvedGroups.push(g); guessHistory.push({ difficulty: g.difficulty, revealed: true }); showSolvedGroup(g);
+                    });
+                    remainingWords = []; render();
+                    setTimeout(() => endGame(false), 500);
+                }, 500);
+            }
+        }
+    }
+
+    function showSolvedGroup(group) {
+        const div = document.createElement('div');
+        div.className = `solved-group group-${COLORS[group.difficulty]}`;
+        div.innerHTML = `<div class="category">${group.category}</div><div class="words">${group.words.join(' • ')}</div>`;
+        document.getElementById('solvedGroups').appendChild(div);
+    }
+
+    function endGame(won) {
+        document.getElementById('endTitle').textContent = won ? '🎉 כל הכבוד!' : 'ניסיון יפה!';
+        const s = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('endMessage').textContent = won
+            ? `נפתר ב-${Math.floor(s/60)}:${String(s%60).padStart(2,'0')} עם ${mistakes} טעויות`
+            : `מצאת ${solvedGroups.filter((_,i) => guessHistory[i]?.correct).length} מתוך 4 קבוצות`;
+        const rg = document.getElementById('resultGrid'); rg.innerHTML = '';
+        guessHistory.filter(g => g.correct || g.revealed).forEach(g => {
+            const row = document.createElement('div');
+            row.textContent = EMOJIS[g.difficulty ?? 0].repeat(4);
+            rg.appendChild(row);
+        });
+        document.getElementById('gameOverOverlay').classList.add('active');
+        if (won) saveProgressItem(`${currentAge}-${currentLevel}`);
+    }
+
+    function shareResult() {
+        let text = `חיבורים - ${AGE_GROUPS.find(a=>a.id===currentAge).label} שלב ${currentLevel+1}\n`;
+        guessHistory.filter(g => g.correct || g.revealed).forEach(g => { text += EMOJIS[g.difficulty??0].repeat(4) + '\n'; });
+        navigator.clipboard.writeText(text.trim()).then(() => {
+            document.getElementById('shareBtn').textContent = '✓ הועתק';
+            setTimeout(() => document.getElementById('shareBtn').textContent = 'שיתוף', 2000);
+        });
+    }
+
+    function nextPuzzle() {
+        const puzzles = PUZZLES[currentAge];
+        const next = currentLevel + 1;
+        if (next < puzzles.length) startGame(currentAge, next);
+        else { document.getElementById('gameOverOverlay').classList.remove('active'); showStages(currentAge); }
+    }
+
+    function loadProgress() { try { return JSON.parse(localStorage.getItem('connections-he')) || {}; } catch { return {}; } }
+    function saveProgressItem(key) { const p = loadProgress(); p[key] = true; localStorage.setItem('connections-he', JSON.stringify(p)); }
+
+    init();
+    </script>
 </body>
 </html>
