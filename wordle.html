@@ -65,7 +65,7 @@
 
         /* Board */
         .board-wrapper { display: flex; justify-content: center; margin: 12px 0; }
-        .board { display: grid; gap: 5px; direction: rtl; }
+        .board { display: grid; gap: 5px; direction: ltr; }
         .tile {
             width: 56px; height: 56px; border: 2px solid var(--border);
             display: flex; align-items: center; justify-content: center;
@@ -449,10 +449,14 @@ function buildKeyboard() {
     });
 }
 
+function rtlCol(col) {
+    return targetWord.length - 1 - col;
+}
+
 function addLetter(letter) {
     if (gameOver || currentCol >= targetWord.length) return;
     currentGuess.push(letter);
-    const tile = document.getElementById(`tile-${currentRow}-${currentCol}`);
+    const tile = document.getElementById(`tile-${currentRow}-${rtlCol(currentCol)}`);
     tile.textContent = letter;
     tile.classList.add('filled');
     currentCol++;
@@ -462,7 +466,7 @@ function deleteLetter() {
     if (gameOver || currentCol <= 0) return;
     currentCol--;
     currentGuess.pop();
-    const tile = document.getElementById(`tile-${currentRow}-${currentCol}`);
+    const tile = document.getElementById(`tile-${currentRow}-${rtlCol(currentCol)}`);
     tile.textContent = '';
     tile.classList.remove('filled');
 }
@@ -506,9 +510,9 @@ function revealRow(row, guess) {
         }
     }
 
-    // Animate tiles
+    // Animate tiles (RTL: first letter on right)
     for (let i = 0; i < wordLen; i++) {
-        const tile = document.getElementById(`tile-${row}-${i}`);
+        const tile = document.getElementById(`tile-${row}-${wordLen - 1 - i}`);
         setTimeout(() => {
             tile.classList.add('reveal');
             setTimeout(() => {
@@ -538,7 +542,7 @@ function revealRow(row, guess) {
             stopTimer();
             // Bounce winning row
             for (let i = 0; i < wordLen; i++) {
-                const tile = document.getElementById(`tile-${row}-${i}`);
+                const tile = document.getElementById(`tile-${row}-${wordLen - 1 - i}`);
                 setTimeout(() => tile.classList.add('bounce'), 300 + i * 100);
             }
             launchConfetti();
