@@ -3,161 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>זיכרון - משחק התאמה</title>
+    <title>מוקשים - שולה מוקשים</title>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
             --bg: #faf8f5; --surface: #ffffff; --text: #1a1a1a;
             --text-secondary: #6b6b6b; --accent: #4a90d9; --border: #e0ddd8;
-            --matched: #d4edda; --matched-border: #28a745;
+            --cell-hidden: #c8c0b8; --cell-hidden-hover: #b8b0a8;
+            --cell-revealed: #e8e4df; --cell-mine: #e74c3c;
+            --cell-flag: #f39c12;
         }
-        body { font-family: 'Rubik', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        body { font-family: 'Rubik', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; user-select: none; }
 
-        .game-nav { display: flex; justify-content: center; background: #1a1a1a; direction: ltr; flex-wrap: wrap; }
-        .game-nav-link { color: #999; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px 24px; letter-spacing: 0.5px; transition: all 0.2s; border-bottom: 2px solid transparent; font-family: 'Rubik', sans-serif; }
+        .game-nav { display: flex; justify-content: center; background: #1a1a1a; direction: ltr; overflow-x: auto; }
+        .game-nav-link { color: #999; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px 24px; letter-spacing: 0.5px; transition: all 0.2s; border-bottom: 2px solid transparent; font-family: 'Rubik', sans-serif; white-space: nowrap; }
         .game-nav-link:hover { color: #fff; }
         .game-nav-link.active { color: #fff; border-bottom-color: #4a90d9; }
 
-        .container { max-width: 700px; margin: 0 auto; padding: 16px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 16px; }
         header { text-align: center; padding: 20px 0 10px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
         header h1 { font-size: 36px; font-weight: 800; }
         header p { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
 
-        .screen { display: none; }
-        .screen.active { display: block; }
+        .hidden { display: none !important; }
 
-        /* Home Screen */
-        .home-title { text-align: center; font-size: 22px; font-weight: 700; margin: 30px 0 10px; }
-        .home-sub { text-align: center; color: var(--text-secondary); font-size: 14px; margin-bottom: 30px; }
-
-        .age-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 420px; margin: 0 auto; }
-        .age-card {
-            background: var(--surface); border: 2px solid var(--border); border-radius: 14px;
-            padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.2s;
-        }
-        .age-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .age-emoji { font-size: 36px; margin-bottom: 8px; }
-        .age-label { font-size: 18px; font-weight: 700; }
-        .age-desc { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
-        .age-progress { font-size: 11px; color: var(--accent); margin-top: 8px; font-weight: 600; }
-
-        /* Stage Selection */
-        .back-btn {
-            background: none; border: none; cursor: pointer; font-family: 'Rubik', sans-serif;
-            font-size: 14px; color: var(--accent); font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 6px;
-        }
-        .back-btn:hover { text-decoration: underline; }
-
-        .stage-title { text-align: center; font-size: 20px; font-weight: 700; margin-bottom: 20px; }
-        .stage-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 420px; margin: 0 auto; }
-        .stage-btn {
+        /* Home */
+        .home-screen { text-align: center; }
+        .diff-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+        .diff-card {
             background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
-            padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative;
+            padding: 20px 12px; cursor: pointer; transition: all 0.2s; text-align: center;
         }
-        .stage-btn:hover { border-color: var(--accent); }
-        .stage-btn.completed { border-color: var(--matched-border); background: var(--matched); }
-        .stage-btn.locked { opacity: 0.4; cursor: not-allowed; }
-        .stage-num { font-size: 22px; font-weight: 700; }
-        .stage-stars { font-size: 12px; margin-top: 4px; color: #f5a623; }
-        .stage-best { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+        .diff-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .diff-card .diff-icon { font-size: 32px; margin-bottom: 8px; }
+        .diff-card h3 { font-size: 18px; margin-bottom: 4px; }
+        .diff-card p { color: var(--text-secondary); font-size: 12px; }
+        .diff-card .best { font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 8px; }
 
-        /* Game Screen */
-        .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
-        .game-info { display: flex; gap: 20px; align-items: center; }
-        .game-stat { text-align: center; }
-        .game-stat-label { font-size: 11px; color: var(--text-secondary); }
-        .game-stat-value { font-size: 18px; font-weight: 700; }
-        .game-back-btn {
-            background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px;
-            cursor: pointer; font-family: 'Rubik', sans-serif; font-size: 13px; color: var(--text-secondary);
-        }
-        .game-back-btn:hover { border-color: var(--accent); color: var(--accent); }
+        /* Game */
+        .game-screen { display: none; }
+        .game-screen.active { display: block; }
 
-        /* Card Grid */
-        .card-grid {
-            display: grid; gap: 8px; max-width: 500px; margin: 0 auto;
-            perspective: 1000px;
-        }
-        .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
-        .card-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
-        .card-grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
-        .card-grid.cols-6 { grid-template-columns: repeat(6, 1fr); }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .toolbar-right { display: flex; align-items: center; gap: 16px; }
+        .back-btn { background: none; border: none; font-size: 16px; cursor: pointer; font-family: 'Rubik', sans-serif; font-weight: 600; color: var(--text); }
+        .back-btn:hover { color: var(--accent); }
 
-        .card {
-            aspect-ratio: 1; cursor: pointer; position: relative;
-            transform-style: preserve-3d; transition: transform 0.5s ease;
-        }
-        .card.flipped { transform: rotateY(180deg); }
-        .card.matched { transform: rotateY(180deg); }
-        .card.matched .card-front { background: var(--matched); border-color: var(--matched-border); }
+        .info-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+            background: var(--surface); border-radius: 10px; padding: 10px 16px; border: 1px solid var(--border); }
+        .info-item { text-align: center; }
+        .info-item .label { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+        .info-item .value { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; direction: ltr; }
+        .info-item .value.mine-count { color: var(--cell-mine); }
 
-        .card-face {
-            position: absolute; inset: 0; border-radius: 10px; display: flex; align-items: center;
-            justify-content: center; backface-visibility: hidden; border: 2px solid var(--border);
-            font-size: 28px; user-select: none;
+        .toggle-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
+        .mode-btn {
+            padding: 8px 20px; border-radius: 8px; border: 2px solid var(--border);
+            background: var(--surface); font-size: 14px; font-weight: 600; cursor: pointer;
+            font-family: 'Rubik', sans-serif; transition: all 0.15s; display: flex; align-items: center; gap: 6px;
         }
-        .card-back {
-            background: var(--accent); border-color: var(--accent);
-            color: white; font-size: 24px;
-        }
-        .card-back::after { content: '?'; font-weight: 700; }
-        .card-front {
-            background: var(--surface); transform: rotateY(180deg);
-        }
+        .mode-btn.active { background: var(--text); color: white; border-color: var(--text); }
+        .mode-btn:hover:not(.active) { border-color: var(--accent); }
 
-        /* Word cards for older ages */
-        .card-front.word-card {
-            font-size: 14px; font-weight: 600; padding: 6px; text-align: center; line-height: 1.3;
+        .grid-wrapper { display: flex; justify-content: center; margin: 0 auto; direction: ltr; }
+        .mine-grid {
+            display: inline-grid; gap: 2px; background: #a09890; padding: 3px; border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
-        @media (max-width: 480px) {
-            .card-front.word-card { font-size: 11px; }
+        .mine-cell {
+            width: 36px; height: 36px; border: none; border-radius: 3px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 800; cursor: pointer;
+            transition: background 0.1s; font-family: 'Rubik', sans-serif;
         }
+        .mine-cell.unrevealed { background: var(--cell-hidden); }
+        .mine-cell.unrevealed:hover { background: var(--cell-hidden-hover); }
+        .mine-cell.unrevealed:active { background: #a8a098; }
+        .mine-cell.revealed { background: var(--cell-revealed); cursor: default; }
+        .mine-cell.mine-hit { background: var(--cell-mine); }
+        .mine-cell.flagged { background: var(--cell-hidden); }
+        .mine-cell.flagged::after { content: '🚩'; font-size: 16px; }
+        .mine-cell.question { background: var(--cell-hidden); }
+        .mine-cell.question::after { content: '❓'; font-size: 14px; }
 
-        /* Completion Modal */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-            z-index: 100; align-items: center; justify-content: center;
+        .mine-cell .num { pointer-events: none; }
+        .n1 { color: #1976d2; } .n2 { color: #388e3c; } .n3 { color: #d32f2f; }
+        .n4 { color: #7b1fa2; } .n5 { color: #ff8f00; } .n6 { color: #00838f; }
+        .n7 { color: #333; } .n8 { color: #888; }
+
+        .game-actions { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+        .act-btn {
+            padding: 10px 20px; border-radius: 10px; border: 2px solid var(--border);
+            background: var(--surface); font-size: 14px; font-weight: 600; cursor: pointer;
+            font-family: 'Rubik', sans-serif; transition: all 0.15s;
         }
+        .act-btn:hover { border-color: var(--accent); }
+        .act-btn.primary { background: var(--text); color: white; border-color: var(--text); }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
         .modal-overlay.active { display: flex; }
         .modal {
             background: var(--surface); border-radius: 16px; padding: 32px; text-align: center;
-            max-width: 360px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            max-width: 380px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        .modal h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
-        .modal .stars { font-size: 36px; margin: 12px 0; }
-        .modal .stats-row { display: flex; justify-content: center; gap: 24px; margin: 16px 0; }
-        .modal .stat-item { text-align: center; }
-        .modal .stat-item .val { font-size: 22px; font-weight: 700; color: var(--accent); }
-        .modal .stat-item .lbl { font-size: 12px; color: var(--text-secondary); }
-        .modal .best-badge { font-size: 12px; color: var(--matched-border); font-weight: 600; margin-top: 4px; }
-        .modal-btns { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
+        .modal h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+        .modal p { color: var(--text-secondary); margin-bottom: 16px; font-size: 15px; }
+        .modal-btns { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
         .modal-btn {
-            padding: 10px 20px; border-radius: 10px; font-family: 'Rubik', sans-serif;
-            font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s;
+            padding: 12px 24px; border-radius: 24px; font-size: 14px; font-weight: 600;
+            cursor: pointer; border: 2px solid var(--text); font-family: 'Rubik', sans-serif;
         }
-        .modal-btn.primary { background: var(--accent); color: #fff; }
-        .modal-btn.primary:hover { background: #3a7bc8; }
-        .modal-btn.secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
-        .modal-btn.secondary:hover { border-color: var(--accent); }
+        .modal-btn.primary { background: var(--text); color: white; }
+        .modal-btn.outline { background: transparent; }
 
-        /* Confetti */
-        .confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 200; overflow: hidden; }
-        .confetti-piece {
-            position: absolute; width: 10px; height: 10px; top: -20px;
-            animation: confettiFall linear forwards;
-        }
-        @keyframes confettiFall {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
+        .confetti { position: fixed; top: -10px; font-size: 24px; animation: fall linear forwards; pointer-events: none; z-index: 200; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
 
-        /* Responsive */
         @media (max-width: 480px) {
-            .card-grid { gap: 6px; }
-            .card-face { border-radius: 8px; font-size: 22px; }
-            .game-info { gap: 12px; }
-            .stage-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+            .mine-cell { width: 30px; height: 30px; font-size: 12px; }
+            .mine-cell.flagged::after { font-size: 13px; }
         }
     </style>
 </head>
@@ -169,432 +134,329 @@
         <a href="wordle.html" class="game-nav-link">מילים</a>
         <a href="sudoku.html" class="game-nav-link">סודוקו</a>
         <a href="2048.html" class="game-nav-link">2048</a>
-        <a href="memory.html" class="game-nav-link active">זיכרון</a>
+        <a href="memory.html" class="game-nav-link active">מוקשים</a>
     </nav>
 
     <div class="container">
         <header>
-            <h1>זיכרון</h1>
-            <p>מצאו את הזוגות התואמים</p>
+            <h1>💣 מוקשים</h1>
+            <p>חשפו את כל התאים בלי לפוצץ מוקש</p>
         </header>
 
-        <!-- Home Screen -->
-        <div id="homeScreen" class="screen active">
-            <div class="home-title">בחרו רמת גיל</div>
-            <div class="home-sub">כל רמת גיל מכילה 8 שלבים עם אתגרים שונים</div>
-            <div class="age-grid" id="ageGrid"></div>
+        <div class="home-screen" id="homeScreen">
+            <div class="diff-cards" id="diffCards"></div>
         </div>
 
-        <!-- Stage Selection -->
-        <div id="stageScreen" class="screen">
-            <button class="back-btn" onclick="showHome()">→ חזרה</button>
-            <div class="stage-title" id="stageTitle"></div>
-            <div class="stage-grid" id="stageGrid"></div>
-        </div>
+        <div class="game-screen" id="gameScreen">
+            <div class="toolbar">
+                <button class="back-btn" id="backBtn">→ חזרה</button>
+                <span id="diffLabel" style="font-weight:700;"></span>
+            </div>
 
-        <!-- Game Screen -->
-        <div id="gameScreen" class="screen">
-            <div class="game-header">
-                <button class="game-back-btn" onclick="showStages(currentAge)">→ חזרה</button>
-                <div class="game-info">
-                    <div class="game-stat">
-                        <div class="game-stat-label">זמן</div>
-                        <div class="game-stat-value" id="timer">0:00</div>
-                    </div>
-                    <div class="game-stat">
-                        <div class="game-stat-label">מהלכים</div>
-                        <div class="game-stat-value" id="moves">0</div>
-                    </div>
-                    <div class="game-stat">
-                        <div class="game-stat-label">זוגות</div>
-                        <div class="game-stat-value" id="pairs">0/0</div>
-                    </div>
+            <div class="info-bar">
+                <div class="info-item">
+                    <div class="label">מוקשים</div>
+                    <div class="value mine-count" id="mineCount">0</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">זמן</div>
+                    <div class="value" id="timer">0:00</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">דגלים</div>
+                    <div class="value" id="flagCount">0</div>
                 </div>
             </div>
-            <div class="card-grid" id="cardGrid"></div>
+
+            <div class="toggle-bar">
+                <button class="mode-btn active" id="revealMode">👆 חשיפה</button>
+                <button class="mode-btn" id="flagMode">🚩 דגל</button>
+            </div>
+
+            <div class="grid-wrapper">
+                <div class="mine-grid" id="grid"></div>
+            </div>
+
+            <div class="game-actions">
+                <button class="act-btn" id="newGameBtn">משחק חדש</button>
+            </div>
         </div>
     </div>
 
-    <!-- Completion Modal -->
-    <div class="modal-overlay" id="completionModal">
+    <div class="modal-overlay" id="endModal">
         <div class="modal">
-            <h2>כל הכבוד! 🎉</h2>
-            <div class="stars" id="modalStars"></div>
-            <div class="stats-row">
-                <div class="stat-item">
-                    <div class="val" id="modalTime"></div>
-                    <div class="lbl">זמן</div>
-                </div>
-                <div class="stat-item">
-                    <div class="val" id="modalMoves"></div>
-                    <div class="lbl">מהלכים</div>
-                </div>
-            </div>
-            <div class="best-badge" id="bestBadge" style="display:none">שיא חדש!</div>
+            <h2 id="endTitle"></h2>
+            <p id="endMsg"></p>
             <div class="modal-btns">
-                <button class="modal-btn primary" id="nextStageBtn" onclick="nextStage()">שלב הבא ←</button>
-                <button class="modal-btn secondary" onclick="replayStage()">שחקו שוב</button>
-                <button class="modal-btn secondary" onclick="closeModal()">חזרה</button>
+                <button class="modal-btn outline" id="endHomeBtn">תפריט</button>
+                <button class="modal-btn primary" id="endRetryBtn">שחק שוב</button>
             </div>
         </div>
     </div>
-
-    <div class="confetti-container" id="confettiContainer"></div>
 
     <script>
-    // ====== DATA ======
-    const AGE_LEVELS = [
-        {
-            id: 'age7', label: 'גיל 7+', emoji: '🐾', desc: 'חיות - 3×4',
-            cols: 3, rows: 4, pairs: 6, type: 'emoji',
-            stages: [
-                ['🐶','🐱','🐰','🐻','🐼','🦊'],
-                ['🐸','🐵','🦁','🐯','🐮','🐷'],
-                ['🐔','🐧','🐦','🦆','🦅','🦉'],
-                ['🐴','🦄','🐝','🐛','🦋','🐌'],
-                ['🐙','🐠','🐟','🦈','🐬','🐳'],
-                ['🐊','🦎','🐍','🐢','🦕','🦖'],
-                ['🐘','🦏','🦛','🦒','🐫','🦘'],
-                ['🦩','🐓','🦜','🦚','🦤','🕊️']
-            ]
-        },
-        {
-            id: 'age10', label: 'גיל 10+', emoji: '⚽', desc: 'דגלים וספורט - 4×4',
-            cols: 4, rows: 4, pairs: 8, type: 'emoji',
-            stages: [
-                ['🇮🇱','🇺🇸','🇬🇧','🇫🇷','🇩🇪','🇯🇵','🇧🇷','🇮🇹'],
-                ['⚽','🏀','🎾','🏐','🏈','⚾','🏓','🏸'],
-                ['🇪🇸','🇵🇹','🇳🇱','🇧🇪','🇨🇭','🇦🇹','🇸🇪','🇳🇴'],
-                ['🎿','🏂','🏊','🚴','🤸','🤾','🏋️','🤺'],
-                ['🇦🇺','🇨🇦','🇲🇽','🇦🇷','🇨🇱','🇨🇴','🇵🇪','🇪🇨'],
-                ['🇰🇷','🇨🇳','🇮🇳','🇹🇷','🇪🇬','🇿🇦','🇳🇬','🇰🇪'],
-                ['🥇','🥈','🥉','🏆','🎯','🎳','🏹','🥊'],
-                ['🇷🇺','🇵🇱','🇬🇷','🇮🇪','🇫🇮','🇩🇰','🇭🇷','🇷🇴']
-            ]
-        },
-        {
-            id: 'age13', label: 'גיל 13+', emoji: '📚', desc: 'זוגות מילים - 4×5',
-            cols: 5, rows: 4, pairs: 10, type: 'words',
-            stages: [
-                [['שמש','☀️ כוכב יום'],['ירח','🌙 לווין הארץ'],['כוכב','⭐ גוף שמימי'],['ענן','☁️ אדי מים'],['גשם','🌧️ משקעים'],['שלג','❄️ גבישי קרח'],['רוח','💨 זרם אוויר'],['ברק','⚡ פריקה חשמלית'],['קשת','🌈 ספקטרום'],['סערה','🌪️ מזג אוויר קיצוני']],
-                [['לב','אהבה'],['מוח','חשיבה'],['עין','ראייה'],['אוזן','שמיעה'],['יד','מגע'],['רגל','הליכה'],['פה','דיבור'],['אף','ריח'],['שן','לעיסה'],['לשון','טעם']],
-                [['אריה','מלך החיות'],['נשר','מלך השמיים'],['דולפין','חכם הים'],['פיל','הגדול ביבשה'],['נמלה','חרוצה'],['דבורה','מייצרת דבש'],['ינשוף','ציד לילה'],['צב','נושא שריון'],['זיקית','מחליפה צבעים'],['חמלאון','מסתגל']],
-                [['אש','🔥 חום ואור'],['מים','💧 H2O'],['אדמה','🌍 יסוד מוצק'],['אוויר','💨 O2'],['ברזל','⚙️ מתכת'],['זהב','✨ יקר'],['כסף','🪙 מתכת'],['נחושת','🟤 חשמל'],['יהלום','💎 קשה'],['אבן','🪨 סלע']],
-                [['ראש','מנהיג'],['זנב','סוף'],['ימין','כיוון'],['שמאל','הפוך'],['מעלה','גובה'],['מטה','עומק'],['פנים','הבעה'],['חוץ','חיצוני'],['קדימה','התקדמות'],['אחורה','נסיגה']],
-                [['אביב','פריחה'],['קיץ','חום'],['סתיו','נשירה'],['חורף','קור'],['בוקר','זריחה'],['ערב','שקיעה'],['לילה','חושך'],['צהריים','שיא'],['שחר','ראשית'],['דמדומים','מעבר']],
-                [['ספר','קריאה'],['עט','כתיבה'],['מחברת','רישום'],['מחק','תיקון'],['סרגל','מדידה'],['מספריים','גזירה'],['דבק','הדבקה'],['מחשב','טכנולוגיה'],['מפה','ניווט'],['שעון','זמן']],
-                [['חכמה','תבונה'],['אומץ','גבורה'],['סבלנות','מתינות'],['אמת','יושר'],['חסד','נדיבות'],['צדק','הגינות'],['שלום','הרמוניה'],['חופש','עצמאות'],['תקווה','אופטימיות'],['אמונה','ביטחון']]
-            ]
-        },
-        {
-            id: 'age16', label: 'גיל 16+', emoji: '🧠', desc: 'קשרים מורכבים - 5×6',
-            cols: 6, rows: 5, pairs: 15, type: 'words',
-            stages: [
-                [['אלגוריתם','סדרת פעולות'],['פרדוקס','סתירה לוגית'],['מטאפורה','דימוי'],['אירוניה','היפוך משמעות'],['אמפתיה','הזדהות'],['סינתזה','מיזוג'],['אנליזה','פירוק'],['היפותזה','השערה'],['אנלוגיה','הקבלה'],['דילמה','התלבטות'],['קטליזטור','מאיץ'],['אנטיתזה','ניגוד'],['סימביוזה','שיתוף פעולה'],['אוטונומיה','עצמאות'],['רציונל','הגיון']],
-                [['דמוקרטיה','שלטון העם'],['מונרכיה','שלטון מלך'],['אוליגרכיה','שלטון מעטים'],['אנרכיה','חוסר שלטון'],['קפיטליזם','שוק חופשי'],['סוציאליזם','שוויון חברתי'],['ליברליזם','חירות הפרט'],['קונסרבטיזם','שימור מסורת'],['פשיזם','דיקטטורה'],['פדרליזם','ביזור סמכויות'],['פלורליזם','ריבוי דעות'],['פופוליזם','פניה להמון'],['נציונליזם','לאומיות'],['גלובליזציה','עולם אחד'],['דיפלומטיה','משא ומתן']],
-                [['ניוטון','כבידה'],['איינשטיין','יחסות'],['דרווין','אבולוציה'],['פרויד','תת-מודע'],['סוקרטס','דיאלוג'],['אפלטון','אידאות'],['אריסטו','לוגיקה'],['קאנט','מוסר'],['דקארט','קוגיטו'],['ניטשה','על-אדם'],['מארקס','מעמדות'],['הייזנברג','אי-ודאות'],['שרדינגר','סופרפוזיציה'],['טיורינג','מחשוב'],['בור','אטום']],
-                [['DNA','חומר תורשתי'],['RNA','שליח גנטי'],['תא','יחידת חיים'],['גן','קטע DNA'],['חלבון','אנזים'],['כרומוזום','נושא גנים'],['מוטציה','שינוי גנטי'],['מיטוזה','חלוקת תא'],['מיוזה','חלוקה רדוקטיבית'],['אבולוציה','התפתחות'],['סלקציה','ברירה'],['אדפטציה','הסתגלות'],['ביוספרה','עולם חי'],['אקוסיסטם','מערכת חיים'],['פוטוסינתזה','המרת אור']],
-                [['תזה','טענה'],['אנטיתזה','טענת נגד'],['סינתזה','מיזוג'],['דדוקציה','מהכלל לפרט'],['אינדוקציה','מהפרט לכלל'],['סילוגיזם','הסקה'],['אפריורי','קודם לניסיון'],['אמפירי','מבוסס ניסיון'],['אובייקטיבי','נטול פניות'],['סובייקטיבי','אישי'],['דטרמיניזם','גורלנות'],['רלטיביזם','יחסיות'],['אבסולוטיזם','מוחלטות'],['פרגמטיזם','תועלתנות'],['אקזיסטנציאליזם','קיומיות']],
-                [['פרולוג','פתיחה'],['אפילוג','סיום'],['מונולוג','שיחת יחיד'],['דיאלוג','שיחה'],['טרגדיה','מחזה עצוב'],['קומדיה','מחזה מצחיק'],['סאטירה','לעג חברתי'],['אלגוריה','משל'],['סונטה','שיר 14 שורות'],['בלדה','שיר סיפורי'],['האיקו','שיר יפני'],['אפוס','עלילה גדולה'],['רומן','סיפור ארוך'],['נובלה','סיפור קצר'],['דרמה','מחזה']],
-                [['אינפלציה','עליית מחירים'],['דפלציה','ירידת מחירים'],['תוצר','ייצור לאומי'],['ריבית','מחיר הכסף'],['מניה','חלק בחברה'],['אגרת חוב','הלוואה'],['תקציב','תכנון הוצאות'],['מיסוי','גביית מדינה'],['יבוא','קנייה מחו"ל'],['יצוא','מכירה לחו"ל'],['היצע','כמות מוצעת'],['ביקוש','כמות מבוקשת'],['מונופול','שחקן יחיד'],['רגולציה','פיקוח'],['תמ"ג','עושר לאומי']],
-                [['קוגניציה','הכרה'],['פרצפציה','תפיסה'],['אינטואיציה','חוש שישי'],['רפלקס','תגובה אוטומטית'],['סכמה','מבנה מחשבתי'],['היוריסטיקה','קיצור דרך'],['דיסוננס','סתירה פנימית'],['קונפורמיות','התאמה לקבוצה'],['אגוצנטריות','מרכוז עצמי'],['רזיליינס','חוסן'],['מוטיבציה','הנעה'],['פרוסטרציה','תסכול'],['סובלימציה','העלאה'],['פרויקציה','השלכה'],['רציונליזציה','תירוץ']]
-            ]
-        }
+    const DIFFICULTIES = [
+        { id: 'beginner', label: 'מתחיל', icon: '🟢', rows: 8, cols: 8, mines: 10, desc: '8×8 • 10 מוקשים' },
+        { id: 'intermediate', label: 'בינוני', icon: '🟡', rows: 12, cols: 12, mines: 30, desc: '12×12 • 30 מוקשים' },
+        { id: 'advanced', label: 'מתקדם', icon: '🟠', rows: 16, cols: 16, mines: 50, desc: '16×16 • 50 מוקשים' },
+        { id: 'expert', label: 'מומחה', icon: '🔴', rows: 16, cols: 30, mines: 99, desc: '16×30 • 99 מוקשים' }
     ];
 
-    // ====== STATE ======
-    let currentAge = null;
-    let currentStage = null;
-    let cards = [];
-    let flippedCards = [];
-    let matchedPairs = 0;
-    let totalPairs = 0;
-    let moveCount = 0;
-    let timerInterval = null;
-    let startTime = null;
-    let elapsedSeconds = 0;
-    let isLocked = false;
+    let currentDiff = null;
+    let board = [], revealed = [], flagged = [], gameOver = false, firstClick = true;
+    let rows = 0, cols = 0, totalMines = 0, flagsPlaced = 0, cellsRevealed = 0;
+    let timerInterval, startTime, seconds = 0;
+    let flagModeActive = false;
 
-    // ====== PROGRESS ======
-    function getProgress() {
-        try { return JSON.parse(localStorage.getItem('memory_progress') || '{}'); } catch { return {}; }
+    function loadBest() { try { return JSON.parse(localStorage.getItem('mines-best')) || {}; } catch { return {}; } }
+    function saveBest(id, time) {
+        const b = loadBest();
+        if (!b[id] || time < b[id]) { b[id] = time; localStorage.setItem('mines-best', JSON.stringify(b)); }
     }
-    function saveProgress(ageId, stage, data) {
-        const prog = getProgress();
-        if (!prog[ageId]) prog[ageId] = {};
-        const existing = prog[ageId][stage];
-        const isNewBest = !existing ||
-            data.moves < existing.moves ||
-            (data.moves === existing.moves && data.time < existing.time);
-        if (isNewBest) {
-            prog[ageId][stage] = { moves: data.moves, time: data.time, stars: data.stars };
+
+    function renderHome() {
+        document.getElementById('homeScreen').classList.remove('hidden');
+        document.getElementById('gameScreen').classList.remove('active');
+        document.getElementById('endModal').classList.remove('active');
+        const container = document.getElementById('diffCards');
+        container.innerHTML = '';
+        const bests = loadBest();
+        DIFFICULTIES.forEach(d => {
+            const card = document.createElement('div');
+            card.className = 'diff-card';
+            const bestTime = bests[d.id] ? formatTime(bests[d.id]) : '---';
+            card.innerHTML = `<div class="diff-icon">${d.icon}</div><h3>${d.label}</h3><p>${d.desc}</p><div class="best">שיא: ${bestTime}</div>`;
+            card.addEventListener('click', () => startGame(d));
+            container.appendChild(card);
+        });
+    }
+
+    function startGame(diff) {
+        currentDiff = diff;
+        rows = diff.rows; cols = diff.cols; totalMines = diff.mines;
+        gameOver = false; firstClick = true; flagsPlaced = 0; cellsRevealed = 0;
+        flagModeActive = false;
+
+        board = Array.from({length: rows}, () => Array(cols).fill(0));
+        revealed = Array.from({length: rows}, () => Array(cols).fill(false));
+        flagged = Array.from({length: rows}, () => Array(cols).fill(0)); // 0=none, 1=flag, 2=question
+
+        document.getElementById('homeScreen').classList.add('hidden');
+        document.getElementById('gameScreen').classList.add('active');
+        document.getElementById('diffLabel').textContent = diff.label;
+        document.getElementById('revealMode').classList.add('active');
+        document.getElementById('flagMode').classList.remove('active');
+        document.getElementById('endModal').classList.remove('active');
+
+        updateInfo();
+        renderGrid();
+        resetTimer();
+    }
+
+    function placeMines(safeR, safeC) {
+        let placed = 0;
+        while (placed < totalMines) {
+            const r = Math.floor(Math.random() * rows);
+            const c = Math.floor(Math.random() * cols);
+            if (board[r][c] === -1) continue;
+            if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
+            board[r][c] = -1;
+            placed++;
         }
-        localStorage.setItem('memory_progress', JSON.stringify(prog));
-        return isNewBest;
-    }
-    function getStageData(ageId, stage) {
-        const prog = getProgress();
-        return prog[ageId] && prog[ageId][stage] ? prog[ageId][stage] : null;
-    }
-    function getCompletedCount(ageId) {
-        const prog = getProgress();
-        return prog[ageId] ? Object.keys(prog[ageId]).length : 0;
-    }
-
-    // ====== SCREENS ======
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (board[r][c] === -1) continue;
+                let count = 0;
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr === 0 && dc === 0) continue;
+                        const nr = r + dr, nc = c + dc;
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc] === -1) count++;
+                    }
+                }
+                board[r][c] = count;
+            }
+        }
     }
 
-    function showHome() {
-        stopTimer();
-        showScreen('homeScreen');
-        renderAgeGrid();
-    }
-
-    function renderAgeGrid() {
-        const grid = document.getElementById('ageGrid');
-        grid.innerHTML = AGE_LEVELS.map(age => {
-            const completed = getCompletedCount(age.id);
-            return `
-                <div class="age-card" onclick="showStages('${age.id}')">
-                    <div class="age-emoji">${age.emoji}</div>
-                    <div class="age-label">${age.label}</div>
-                    <div class="age-desc">${age.desc}</div>
-                    <div class="age-progress">${completed}/8 שלבים</div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function showStages(ageId) {
-        stopTimer();
-        currentAge = ageId;
-        const age = AGE_LEVELS.find(a => a.id === ageId);
-        showScreen('stageScreen');
-        document.getElementById('stageTitle').textContent = `${age.label} - בחרו שלב`;
-        const grid = document.getElementById('stageGrid');
+    function renderGrid() {
+        const grid = document.getElementById('grid');
+        grid.style.gridTemplateColumns = `repeat(${cols}, 36px)`;
         grid.innerHTML = '';
-        for (let i = 0; i < 8; i++) {
-            const data = getStageData(ageId, i);
-            const isCompleted = !!data;
-            const isLocked = i > 0 && !getStageData(ageId, i - 1);
-            const btn = document.createElement('div');
-            btn.className = 'stage-btn' + (isCompleted ? ' completed' : '') + (isLocked ? ' locked' : '');
-            let starsHtml = '';
-            let bestHtml = '';
-            if (data) {
-                starsHtml = `<div class="stage-stars">${'★'.repeat(data.stars)}${'☆'.repeat(3 - data.stars)}</div>`;
-                bestHtml = `<div class="stage-best">${formatTime(data.time)} | ${data.moves} מהלכים</div>`;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'mine-cell';
+
+                if (revealed[r][c]) {
+                    cell.classList.add('revealed');
+                    if (board[r][c] === -1) {
+                        cell.classList.add('mine-hit');
+                        cell.textContent = '💣';
+                    } else if (board[r][c] > 0) {
+                        const span = document.createElement('span');
+                        span.className = `num n${board[r][c]}`;
+                        span.textContent = board[r][c];
+                        cell.appendChild(span);
+                    }
+                } else {
+                    cell.classList.add('unrevealed');
+                    if (flagged[r][c] === 1) {
+                        cell.classList.add('flagged');
+                    } else if (flagged[r][c] === 2) {
+                        cell.classList.add('question');
+                    }
+                    cell.addEventListener('click', () => handleClick(r, c));
+                    cell.addEventListener('contextmenu', (e) => { e.preventDefault(); toggleFlag(r, c); });
+                }
+                grid.appendChild(cell);
             }
-            btn.innerHTML = `<div class="stage-num">${i + 1}</div>${starsHtml}${bestHtml}`;
-            if (!isLocked) {
-                btn.onclick = () => startGame(ageId, i);
-            }
-            grid.appendChild(btn);
         }
     }
 
-    // ====== GAME ======
-    function startGame(ageId, stage) {
-        currentAge = ageId;
-        currentStage = stage;
-        const age = AGE_LEVELS.find(a => a.id === ageId);
-        totalPairs = age.pairs;
-        matchedPairs = 0;
-        moveCount = 0;
-        flippedCards = [];
-        isLocked = false;
+    function handleClick(r, c) {
+        if (gameOver) return;
+        if (flagModeActive) { toggleFlag(r, c); return; }
+        if (flagged[r][c] !== 0) return;
 
-        showScreen('gameScreen');
-        document.getElementById('moves').textContent = '0';
-        document.getElementById('pairs').textContent = `0/${totalPairs}`;
+        if (firstClick) {
+            firstClick = false;
+            placeMines(r, c);
+            startTimer();
+        }
 
-        buildCards(age, stage);
-        startTimer();
+        if (board[r][c] === -1) {
+            revealAllMines(r, c);
+            endGame(false);
+            return;
+        }
+
+        revealCell(r, c);
+        checkWin();
+        renderGrid();
     }
 
-    function buildCards(age, stage) {
-        const grid = document.getElementById('cardGrid');
-        grid.className = 'card-grid';
+    function revealCell(r, c) {
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+        if (revealed[r][c] || flagged[r][c] === 1) return;
 
-        if (age.cols <= 3) grid.classList.add('cols-3');
-        else if (age.cols <= 4) grid.classList.add('cols-4');
-        else if (age.cols <= 5) grid.classList.add('cols-5');
-        else grid.classList.add('cols-6');
+        revealed[r][c] = true;
+        flagged[r][c] = 0;
+        cellsRevealed++;
 
-        const stageData = age.stages[stage];
+        if (board[r][c] === 0) {
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    revealCell(r + dr, c + dc);
+                }
+            }
+        }
+    }
 
-        if (age.type === 'emoji') {
-            // Create pairs of same emoji
-            cards = [];
-            stageData.forEach((emoji, idx) => {
-                cards.push({ id: idx * 2, pairId: idx, display: emoji, type: 'emoji' });
-                cards.push({ id: idx * 2 + 1, pairId: idx, display: emoji, type: 'emoji' });
-            });
+    function toggleFlag(r, c) {
+        if (gameOver || revealed[r][c]) return;
+        if (flagged[r][c] === 0) {
+            flagged[r][c] = 1;
+            flagsPlaced++;
+        } else if (flagged[r][c] === 1) {
+            flagged[r][c] = 2;
+            flagsPlaced--;
         } else {
-            // Word pairs: card A shows word, card B shows meaning
-            cards = [];
-            stageData.forEach((pair, idx) => {
-                cards.push({ id: idx * 2, pairId: idx, display: pair[0], type: 'word' });
-                cards.push({ id: idx * 2 + 1, pairId: idx, display: pair[1], type: 'word' });
-            });
+            flagged[r][c] = 0;
         }
-
-        // Shuffle
-        for (let i = cards.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [cards[i], cards[j]] = [cards[j], cards[i]];
-        }
-
-        grid.innerHTML = cards.map((card, i) => `
-            <div class="card" data-index="${i}" onclick="flipCard(${i})">
-                <div class="card-face card-back"></div>
-                <div class="card-face card-front ${card.type === 'word' ? 'word-card' : ''}">${card.display}</div>
-            </div>
-        `).join('');
+        updateInfo();
+        renderGrid();
     }
 
-    function flipCard(index) {
-        if (isLocked) return;
-        const cardEl = document.querySelectorAll('.card')[index];
-        if (cardEl.classList.contains('flipped') || cardEl.classList.contains('matched')) return;
-        if (flippedCards.length >= 2) return;
-
-        cardEl.classList.add('flipped');
-        flippedCards.push(index);
-
-        if (flippedCards.length === 2) {
-            moveCount++;
-            document.getElementById('moves').textContent = moveCount;
-            checkMatch();
-        }
-    }
-
-    function checkMatch() {
-        const [i1, i2] = flippedCards;
-        const card1 = cards[i1];
-        const card2 = cards[i2];
-        const el1 = document.querySelectorAll('.card')[i1];
-        const el2 = document.querySelectorAll('.card')[i2];
-
-        if (card1.pairId === card2.pairId) {
-            // Match!
-            el1.classList.add('matched');
-            el2.classList.add('matched');
-            matchedPairs++;
-            document.getElementById('pairs').textContent = `${matchedPairs}/${totalPairs}`;
-            flippedCards = [];
-
-            if (matchedPairs === totalPairs) {
-                setTimeout(completeGame, 600);
+    function revealAllMines(hitR, hitC) {
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (board[r][c] === -1) revealed[r][c] = true;
             }
-        } else {
-            // No match - flip back
-            isLocked = true;
-            setTimeout(() => {
-                el1.classList.remove('flipped');
-                el2.classList.remove('flipped');
-                flippedCards = [];
-                isLocked = false;
-            }, 1000);
+        }
+        renderGrid();
+    }
+
+    function checkWin() {
+        const totalSafe = rows * cols - totalMines;
+        if (cellsRevealed === totalSafe) {
+            endGame(true);
         }
     }
 
-    // ====== TIMER ======
+    function endGame(won) {
+        gameOver = true;
+        clearInterval(timerInterval);
+
+        if (won) {
+            saveBest(currentDiff.id, seconds);
+            spawnConfetti();
+            document.getElementById('endTitle').textContent = '🎉 ניצחת!';
+            document.getElementById('endMsg').textContent = `סיימת ב-${formatTime(seconds)}`;
+        } else {
+            document.getElementById('endTitle').textContent = '💥 בום!';
+            document.getElementById('endMsg').textContent = 'פוצצת מוקש... נסה שוב!';
+        }
+        document.getElementById('endModal').classList.add('active');
+    }
+
+    function updateInfo() {
+        document.getElementById('mineCount').textContent = totalMines - flagsPlaced;
+        document.getElementById('flagCount').textContent = flagsPlaced;
+    }
+
     function startTimer() {
-        stopTimer();
-        startTime = Date.now();
-        elapsedSeconds = 0;
-        document.getElementById('timer').textContent = '0:00';
+        clearInterval(timerInterval);
+        startTime = Date.now(); seconds = 0;
         timerInterval = setInterval(() => {
-            elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-            document.getElementById('timer').textContent = formatTime(elapsedSeconds);
+            seconds = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer').textContent = formatTime(seconds);
         }, 1000);
     }
 
-    function stopTimer() {
-        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    function resetTimer() {
+        clearInterval(timerInterval);
+        seconds = 0;
+        document.getElementById('timer').textContent = '0:00';
     }
 
     function formatTime(s) {
-        const m = Math.floor(s / 60);
-        const sec = s % 60;
-        return `${m}:${sec.toString().padStart(2, '0')}`;
+        return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
     }
 
-    // ====== COMPLETION ======
-    function calculateStars(moves, pairs) {
-        const ratio = moves / pairs;
-        if (ratio <= 1.5) return 3;
-        if (ratio <= 2.5) return 2;
-        return 1;
-    }
-
-    function completeGame() {
-        stopTimer();
-        const stars = calculateStars(moveCount, totalPairs);
-        const isNewBest = saveProgress(currentAge, currentStage, {
-            moves: moveCount, time: elapsedSeconds, stars: stars
-        });
-
-        document.getElementById('modalStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
-        document.getElementById('modalTime').textContent = formatTime(elapsedSeconds);
-        document.getElementById('modalMoves').textContent = moveCount;
-
-        const bestBadge = document.getElementById('bestBadge');
-        bestBadge.style.display = isNewBest ? 'block' : 'none';
-
-        // Hide "next stage" if last stage
-        const nextBtn = document.getElementById('nextStageBtn');
-        nextBtn.style.display = currentStage < 7 ? 'inline-block' : 'none';
-
-        document.getElementById('completionModal').classList.add('active');
-        launchConfetti();
-    }
-
-    function closeModal() {
-        document.getElementById('completionModal').classList.remove('active');
-        showStages(currentAge);
-    }
-
-    function nextStage() {
-        document.getElementById('completionModal').classList.remove('active');
-        if (currentStage < 7) {
-            startGame(currentAge, currentStage + 1);
-        } else {
-            showStages(currentAge);
+    function spawnConfetti() {
+        const emojis = ['🎉','⭐','🎊','✨','🏆'];
+        for (let i = 0; i < 30; i++) {
+            const el = document.createElement('div');
+            el.className = 'confetti';
+            el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.animationDuration = (2 + Math.random() * 2) + 's';
+            el.style.animationDelay = Math.random() * 0.5 + 's';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 5000);
         }
     }
 
-    function replayStage() {
-        document.getElementById('completionModal').classList.remove('active');
-        startGame(currentAge, currentStage);
-    }
+    // Events
+    document.getElementById('backBtn').addEventListener('click', renderHome);
+    document.getElementById('newGameBtn').addEventListener('click', () => startGame(currentDiff));
+    document.getElementById('endHomeBtn').addEventListener('click', renderHome);
+    document.getElementById('endRetryBtn').addEventListener('click', () => { document.getElementById('endModal').classList.remove('active'); startGame(currentDiff); });
+    document.getElementById('revealMode').addEventListener('click', () => {
+        flagModeActive = false;
+        document.getElementById('revealMode').classList.add('active');
+        document.getElementById('flagMode').classList.remove('active');
+    });
+    document.getElementById('flagMode').addEventListener('click', () => {
+        flagModeActive = true;
+        document.getElementById('flagMode').classList.add('active');
+        document.getElementById('revealMode').classList.remove('active');
+    });
 
-    // ====== CONFETTI ======
-    function launchConfetti() {
-        const container = document.getElementById('confettiContainer');
-        container.innerHTML = '';
-        const colors = ['#f5a623','#4a90d9','#28a745','#e74c3c','#9b59b6','#f1c40f','#1abc9c','#e67e22'];
-        for (let i = 0; i < 80; i++) {
-            const piece = document.createElement('div');
-            piece.className = 'confetti-piece';
-            piece.style.left = Math.random() * 100 + '%';
-            piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            piece.style.width = (Math.random() * 8 + 6) + 'px';
-            piece.style.height = (Math.random() * 8 + 6) + 'px';
-            piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-            piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
-            piece.style.animationDelay = (Math.random() * 1.5) + 's';
-            container.appendChild(piece);
-        }
-        setTimeout(() => { container.innerHTML = ''; }, 5000);
-    }
-
-    // ====== INIT ======
-    renderAgeGrid();
+    renderHome();
     </script>
 </body>
 </html>
