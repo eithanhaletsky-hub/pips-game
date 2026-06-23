@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>טריוויה - Pips</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #faf8f5;
+            --surface: #ffffff;
+            --text: #1a1a1a;
+            --text-secondary: #6b6b6b;
+            --accent: #4a90d9;
+            --border: #e0ddd8;
+            --correct: #4caf50;
+            --wrong: #e53935;
+            --streak: #ff9800;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Rubik', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Nav Bar */
+        .game-nav {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            padding: 10px 16px;
+            background: #1a1a1a;
+            direction: ltr;
+            flex-wrap: wrap;
+            font-family: 'Rubik', sans-serif;
+        }
+        .game-nav-link {
+            color: #999;
+            text-decoration: none;
+            padding: 6px 12px;
+            font-size: 14px;
+            border-bottom: 2px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
+            white-space: nowrap;
+        }
+        .game-nav-link:hover { color: #fff; }
+        .game-nav-link.active {
+            color: #fff;
+            border-bottom-color: #4a90d9;
+        }
+
+        /* Container */
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+        }
+
+        /* Screens */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* Home Screen */
+        .home-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            margin: 30px 0 8px;
+        }
+        .home-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 32px;
+        }
+        .home-icon {
+            text-align: center;
+            font-size: 64px;
+            margin-top: 10px;
+        }
+
+        .age-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .age-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .age-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .age-card-emoji { font-size: 40px; margin-bottom: 10px; }
+        .age-card-label {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+        .age-card-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        .age-card-best {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* Round Select */
+        .round-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 24px 0 8px;
+        }
+        .round-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+        .round-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        .round-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            font-family: 'Rubik', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .round-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .round-btn .round-score {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            font-family: 'Rubik', sans-serif;
+            font-size: 15px;
+            color: var(--accent);
+            cursor: pointer;
+            margin-bottom: 10px;
+            padding: 6px 0;
+        }
+        .back-btn:hover { text-decoration: underline; }
+
+        /* Quiz Screen */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .quiz-info {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        .quiz-badge {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .streak-badge {
+            background: var(--streak);
+            color: #fff;
+            border-color: var(--streak);
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            background: var(--border);
+            border-radius: 6px;
+            height: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 6px;
+            transition: width 0.4s ease;
+        }
+        .progress-label {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        /* Timer */
+        .timer-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .timer-circle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            position: relative;
+        }
+        .timer-circle svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 64px; height: 64px;
+            transform: rotate(-90deg);
+        }
+        .timer-circle svg circle {
+            fill: none;
+            stroke-width: 4;
+            cx: 32; cy: 32; r: 28;
+        }
+        .timer-bg { stroke: var(--border); }
+        .timer-fg {
+            stroke: var(--accent);
+            stroke-dasharray: 175.93;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.3s;
+            stroke-linecap: round;
+        }
+        .timer-fg.warning { stroke: var(--wrong); }
+
+        /* Question */
+        .question-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .question-category {
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .question-text {
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+
+        /* Options */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .option-btn {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            font-family: 'Rubik', sans-serif;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            line-height: 1.4;
+            color: var(--text);
+        }
+        .option-btn:hover:not(.disabled) {
+            border-color: var(--accent);
+            background: rgba(74,144,217,0.05);
+        }
+        .option-btn.correct {
+            background: rgba(76,175,80,0.12);
+            border-color: var(--correct);
+            color: var(--correct);
+            font-weight: 600;
+        }
+        .option-btn.wrong {
+            background: rgba(229,57,53,0.12);
+            border-color: var(--wrong);
+            color: var(--wrong);
+        }
+        .option-btn.disabled { cursor: default; opacity: 0.7; }
+
+        .answer-feedback {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            min-height: 24px;
+        }
+        .feedback-correct { color: var(--correct); }
+        .feedback-wrong { color: var(--wrong); }
+
+        /* Summary Screen */
+        .summary-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px 24px;
+            text-align: center;
+            margin-top: 24px;
+        }
+        .summary-emoji { font-size: 64px; margin-bottom: 12px; }
+        .summary-score {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .summary-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        .summary-stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin: 20px 0;
+        }
+        .summary-stat {
+            text-align: center;
+        }
+        .summary-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .summary-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .summary-best {
+            font-size: 14px;
+            color: var(--correct);
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        .summary-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 28px;
+            font-family: 'Rubik', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background: #3a7bc8; }
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 28px;
+            font-family: 'Rubik', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-secondary:hover { background: var(--border); }
+
+        /* Confetti */
+        .confetti-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute;
+            top: -20px;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            animation: confetti-fall linear forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        @media (max-width: 600px) {
+            .age-grid { grid-template-columns: 1fr; }
+            .options-grid { grid-template-columns: 1fr; }
+            .round-grid { grid-template-columns: repeat(5, 1fr); }
+            .home-title { font-size: 26px; }
+            .question-text { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="game-nav">
+    <a href="index.html" class="game-nav-link">Pips</a>
+    <a href="connections.html" class="game-nav-link">חיבורים</a>
+    <a href="kenken.html" class="game-nav-link">קנקן</a>
+    <a href="wordle.html" class="game-nav-link">מילים</a>
+    <a href="sudoku.html" class="game-nav-link">סודוקו</a>
+    <a href="2048.html" class="game-nav-link">2048</a>
+    <a href="memory.html" class="game-nav-link">מוקשים</a>
+    <a href="trivia.html" class="game-nav-link active">טריוויה</a>
+    <a href="hangman.html" class="game-nav-link">איש תלוי</a>
+    <a href="snake.html" class="game-nav-link">נחש</a>
+    <a href="connect4.html" class="game-nav-link">ארבע בשורה</a>
+</nav>
+
+<div class="container">
+    <!-- Home Screen -->
+    <div id="homeScreen" class="screen active">
+        <div class="home-icon">🧠</div>
+        <h1 class="home-title">טריוויה בעברית</h1>
+        <p class="home-subtitle">בחרו קבוצת גיל והתחילו לשחק!</p>
+        <div class="age-grid" id="ageGrid"></div>
+    </div>
+
+    <!-- Round Select Screen -->
+    <div id="roundScreen" class="screen">
+        <button class="back-btn" onclick="showHome()">→ חזרה</button>
+        <h2 class="round-title" id="roundTitle"></h2>
+        <p class="round-subtitle">בחרו סיבוב</p>
+        <div class="round-grid" id="roundGrid"></div>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quizScreen" class="screen">
+        <div class="quiz-header">
+            <div class="quiz-info">
+                <span class="quiz-badge" id="scoreBadge">ניקוד: 0</span>
+                <span class="quiz-badge streak-badge" id="streakBadge" style="display:none">🔥 0</span>
+            </div>
+            <button class="back-btn" onclick="confirmQuit()" style="margin:0">יציאה</button>
+        </div>
+        <div class="progress-label" id="progressLabel">1 / 10</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+        <div class="timer-container">
+            <div class="timer-circle">
+                <svg><circle class="timer-bg"/><circle class="timer-fg" id="timerCircle"/></svg>
+                <span id="timerText">15</span>
+            </div>
+        </div>
+        <div class="question-card">
+            <div class="question-category" id="questionCategory"></div>
+            <div class="question-text" id="questionText"></div>
+        </div>
+        <div class="options-grid" id="optionsGrid"></div>
+        <div class="answer-feedback" id="answerFeedback"></div>
+    </div>
+
+    <!-- Summary Screen -->
+    <div id="summaryScreen" class="screen">
+        <button class="back-btn" onclick="showRounds()">→ חזרה לסיבובים</button>
+        <div class="summary-card">
+            <div class="summary-emoji" id="summaryEmoji"></div>
+            <div class="summary-score" id="summaryScore"></div>
+            <div class="summary-label">מתוך 10</div>
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <div class="summary-stat-value" id="summaryStreak">0</div>
+                    <div class="summary-stat-label">רצף מקסימלי</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-value" id="summaryTime">0</div>
+                    <div class="summary-stat-label">זמן ממוצע (שניות)</div>
+                </div>
+            </div>
+            <div class="summary-best" id="summaryBest" style="display:none">🏆 שיא חדש!</div>
+            <div class="summary-actions">
+                <button class="btn-primary" id="nextRoundBtn" onclick="nextRound()">סיבוב הבא</button>
+                <button class="btn-secondary" onclick="showRounds()">חזרה לסיבובים</button>
+                <button class="btn-secondary" onclick="showHome()">דף הבית</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===================== QUESTION DATA =====================
+const allQuestions = {
+    "7": [
+        {q:"מהו הצבע של שמיים בריאים ביום בהיר?", o:["כחול","ירוק","אדום","צהוב"], a:0, c:"טבע"},
+        {q:"כמה רגליים יש לעכביש?", o:["6","8","10","4"], a:1, c:"חיות"},
+        {q:"מה החיה הכי גדולה בעולם?", o:["פיל","ג'ירפה","לוויתן כחול","כריש"], a:2, c:"חיות"},
+        {q:"מה הצבע שמתקבל מערבוב אדום וצהוב?", o:["ירוק","כתום","סגול","חום"], a:1, c:"צבעים"},
+        {q:"באיזו עונה עלים נושרים מהעצים?", o:["אביב","קיץ","סתיו","חורף"], a:2, c:"טבע"},
+        {q:"כמה ימים יש בשבוע?", o:["5","6","7","8"], a:2, c:"כללי"},
+        {q:"מה השם של הכוכב הקרוב ביותר לכדור הארץ?", o:["הירח","השמש","מאדים","נוגה"], a:1, c:"טבע"},
+        {q:"איזו חיה אומרת 'מיאו'?", o:["כלב","חתול","ציפור","עכבר"], a:1, c:"חיות"},
+        {q:"מה הפרי שהוא אדום ויש לו זרעים בחוץ?", o:["תפוח","אבטיח","תות","דובדבן"], a:2, c:"טבע"},
+        {q:"כמה חודשים יש בשנה?", o:["10","11","12","13"], a:2, c:"כללי"},
+        {q:"מה החיה הכי מהירה בעולם?", o:["אריה","ברדלס","סוס","נשר"], a:1, c:"חיות"},
+        {q:"איזה כוכב לכת הוא הקרוב ביותר לשמש?", o:["נוגה","כוכב חמה","כדור הארץ","מאדים"], a:1, c:"טבע"},
+        {q:"מה הצבע של בננה בשלה?", o:["ירוק","צהוב","אדום","כחול"], a:1, c:"צבעים"},
+        {q:"באיזה יבשת חיות ג'ירפות בטבע?", o:["אסיה","אירופה","אפריקה","אוסטרליה"], a:2, c:"חיות"},
+        {q:"מה עושים דבורים?", o:["חלב","דבש","שמן","מיץ"], a:1, c:"טבע"},
+        {q:"כמה אצבעות יש ביד אחת?", o:["4","5","6","3"], a:1, c:"כללי"},
+        {q:"איזו חיה ידועה בזיכרון טוב?", o:["דג זהב","פיל","חתול","תוכי"], a:1, c:"חיות"},
+        {q:"מה הצורה של כדור?", o:["ריבוע","עיגול","משולש","כוכב"], a:1, c:"כללי"},
+        {q:"באיזו עונה יורד שלג?", o:["קיץ","סתיו","אביב","חורף"], a:3, c:"טבע"},
+        {q:"מי כתב את 'הנסיך הקטן'?", o:["רואלד דאל","סנט-אקזופרי","אנדרסן","גרים"], a:1, c:"ספרים"},
+        {q:"כמה צבעים יש בקשת?", o:["5","6","7","8"], a:2, c:"טבע"},
+        {q:"מה המאכל העיקרי של פנדה?", o:["דגים","בשר","במבוק","פירות"], a:2, c:"חיות"},
+        {q:"איזה חודש מגיע אחרי ינואר?", o:["מרץ","פברואר","אפריל","דצמבר"], a:1, c:"כללי"},
+        {q:"מה הצבע שמתקבל מערבוב כחול וצהוב?", o:["סגול","כתום","ירוק","חום"], a:2, c:"צבעים"},
+        {q:"איזו חיה חיה הכי הרבה שנים?", o:["כלב","צב","סוס","ארנב"], a:1, c:"חיות"},
+        {q:"כמה עונות יש בשנה?", o:["2","3","4","5"], a:2, c:"כללי"},
+        {q:"מאיפה מגיע שוקולד?", o:["פרח","עץ קקאו","חיטה","סלק"], a:1, c:"כללי"},
+        {q:"מה השם של תינוק חתול?", o:["גור","חתלתול","עגל","סייח"], a:1, c:"חיות"},
+        {q:"מה הירק הכתום הגדול?", o:["גזר","דלעת","תפוז","פפריקה"], a:1, c:"טבע"},
+        {q:"איזה בעל חיים הוא סמל אוסטרליה?", o:["פנדה","קנגורו","אריה","דוב"], a:1, c:"חיות"}
+    ],
+    "10": [
+        {q:"מהי בירת צרפת?", o:["לונדון","ברלין","פריז","מדריד"], a:2, c:"גיאוגרפיה"},
+        {q:"כמה יבשות יש בעולם?", o:["5","6","7","8"], a:2, c:"גיאוגרפיה"},
+        {q:"מהו כוכב הלכת הגדול ביותר במערכת השמש?", o:["שבתאי","צדק","אורנוס","נפטון"], a:1, c:"מדע"},
+        {q:"באיזו שנה הוקמה מדינת ישראל?", o:["1945","1948","1950","1952"], a:1, c:"היסטוריה"},
+        {q:"מה הנהר הארוך ביותר בעולם?", o:["נילוס","אמזונס","מיסיסיפי","ינגצה"], a:0, c:"גיאוגרפיה"},
+        {q:"באיזה ספורט משתמשים במחבט ובכדור קטן ירוק?", o:["כדורגל","טניס","כדורסל","קריקט"], a:1, c:"ספורט"},
+        {q:"מה הסימן הכימי של מים?", o:["CO2","H2O","O2","NaCl"], a:1, c:"מדע"},
+        {q:"כמה שחקנים יש בקבוצת כדורגל?", o:["9","10","11","12"], a:2, c:"ספורט"},
+        {q:"מי צייר את המונה ליזה?", o:["פיקאסו","לאונרדו דה וינצ'י","מיכלאנג'לו","ואן גוך"], a:1, c:"היסטוריה"},
+        {q:"מהי היבשת הקרה ביותר?", o:["אירופה","אסיה","אנטארקטיקה","אפריקה"], a:2, c:"גיאוגרפיה"},
+        {q:"כמה עצמות יש בגוף האדם הבוגר?", o:["106","206","306","406"], a:1, c:"מדע"},
+        {q:"באיזו מדינה נמצא מגדל אייפל?", o:["אנגליה","ספרד","צרפת","איטליה"], a:2, c:"גיאוגרפיה"},
+        {q:"מה הכוכב הקרוב ביותר לכדור הארץ מלבד השמש?", o:["סיריוס","פרוקסימה קנטאורי","וגה","אלפא קנטאורי"], a:1, c:"מדע"},
+        {q:"מהו המדבר הגדול ביותר בעולם?", o:["סהרה","גובי","ערבה","קלהרי"], a:0, c:"גיאוגרפיה"},
+        {q:"באיזו שנה נחת אדם על הירח לראשונה?", o:["1965","1967","1969","1971"], a:2, c:"היסטוריה"},
+        {q:"מי המציא את הטלפון?", o:["אדיסון","בל","טסלה","מרקוני"], a:1, c:"היסטוריה"},
+        {q:"כמה צלעות יש למשולש?", o:["2","3","4","5"], a:1, c:"מדע"},
+        {q:"מהי בירת יפן?", o:["בייג'ינג","סיאול","טוקיו","בנגקוק"], a:2, c:"גיאוגרפיה"},
+        {q:"באיזה ספורט יש סלאם דאנק?", o:["כדורגל","טניס","כדורסל","כדור עף"], a:2, c:"ספורט"},
+        {q:"מהו האוקיינוס הגדול ביותר?", o:["האטלנטי","ההודי","השקט","הארקטי"], a:2, c:"גיאוגרפיה"},
+        {q:"מי כתב את 'הארי פוטר'?", o:["ג'.ר.ר. טולקין","ג'.ק. רולינג","רואלד דאל","ס.ס. לואיס"], a:1, c:"כללי"},
+        {q:"כמה שיניים יש לאדם בוגר?", o:["28","30","32","34"], a:2, c:"מדע"},
+        {q:"מהי המדינה הגדולה ביותר בעולם לפי שטח?", o:["סין","קנדה","רוסיה","ארה\"ב"], a:2, c:"גיאוגרפיה"},
+        {q:"מה הגז העיקרי שאנחנו נושמים?", o:["חמצן","חנקן","פחמן דו-חמצני","הליום"], a:1, c:"מדע"},
+        {q:"באיזו עיר נערכו אולימפיאדת 2020?", o:["פריז","לונדון","טוקיו","ריו"], a:2, c:"ספורט"},
+        {q:"מהו ההר הגבוה ביותר בעולם?", o:["קילימנג'רו","K2","אוורסט","מון בלאן"], a:2, c:"גיאוגרפיה"},
+        {q:"מה לומדים בשיעור ביולוגיה?", o:["מספרים","חיים וטבע","כוכבים","שפות"], a:1, c:"מדע"},
+        {q:"באיזו מדינה נמצאים הפירמידות?", o:["מקסיקו","מצרים","הודו","יוון"], a:1, c:"היסטוריה"},
+        {q:"מה השם של כדור הארץ ביוונית?", o:["מארס","ונוס","טרה","גאיה"], a:3, c:"מדע"},
+        {q:"כמה דקות יש בשעה?", o:["30","45","60","90"], a:2, c:"כללי"}
+    ],
+    "13": [
+        {q:"מי היה הנשיא הראשון של ארה\"ב?", o:["תומס ג'פרסון","ג'ורג' וושינגטון","אברהם לינקולן","ג'ון אדמס"], a:1, c:"היסטוריה"},
+        {q:"באיזו שנה החלה מלחמת העולם השנייה?", o:["1935","1937","1939","1941"], a:2, c:"היסטוריה"},
+        {q:"מי כתב את 'רומיאו ויוליה'?", o:["צ'ארלס דיקנס","שייקספיר","מולייר","גתה"], a:1, c:"ספרות"},
+        {q:"מהי שפת התכנות הפופולרית ביותר בעולם?", o:["Java","C++","Python","JavaScript"], a:3, c:"טכנולוגיה"},
+        {q:"מי המציא את המנורה החשמלית?", o:["ניקולא טסלה","תומס אדיסון","אלכסנדר בל","מייקל פרדיי"], a:1, c:"טכנולוגיה"},
+        {q:"מה הנוסחה של אנרגיה לפי איינשטיין?", o:["E=mc","E=mc²","E=m/c","E=2mc"], a:1, c:"מדע"},
+        {q:"באיזו מדינה הומצאה הפיצה?", o:["צרפת","ספרד","יוון","איטליה"], a:3, c:"כללי"},
+        {q:"מי ציירה את 'ליל הכוכבים'?", o:["מונה","פיקאסו","ואן גוך","דאלי"], a:2, c:"אמנות"},
+        {q:"מהו האלמנט הנפוץ ביותר ביקום?", o:["חמצן","פחמן","הליום","מימן"], a:3, c:"מדע"},
+        {q:"באיזו שנה הומצא האינטרנט?", o:["1969","1983","1989","1995"], a:2, c:"טכנולוגיה"},
+        {q:"מי היה מנהיג תנועת זכויות האזרחים בארה\"ב?", o:["מלקולם אקס","מרטין לותר קינג","רוזה פארקס","ברק אובמה"], a:1, c:"היסטוריה"},
+        {q:"מהו הספר הנמכר ביותר בהיסטוריה?", o:["הארי פוטר","התנ\"ך","שר הטבעות","דון קישוט"], a:1, c:"ספרות"},
+        {q:"באיזו שנה נפלה חומת ברלין?", o:["1987","1989","1991","1993"], a:1, c:"היסטוריה"},
+        {q:"מה השם של מייסד פייסבוק?", o:["סטיב ג'ובס","ביל גייטס","מארק צוקרברג","אילון מאסק"], a:2, c:"טכנולוגיה"},
+        {q:"מהו כלי הנגינה הגדול ביותר בתזמורת?", o:["צ'לו","קונטרבס","פסנתר","נבל"], a:2, c:"מוזיקה"},
+        {q:"מי כתב את 'אלף לילה ולילה'?", o:["סיפור עממי ערבי","שייקספיר","הומרוס","אנדרסן"], a:0, c:"ספרות"},
+        {q:"מהו הגז שצמחים משחררים בפוטוסינתזה?", o:["חנקן","חמצן","פחמן דו-חמצני","מימן"], a:1, c:"מדע"},
+        {q:"באיזו עיר נמצא הקולוסיאום?", o:["אתונה","רומא","קהיר","ירושלים"], a:1, c:"היסטוריה"},
+        {q:"מה השם של מערכת ההפעלה של אפל למחשבים?", o:["Windows","Linux","macOS","ChromeOS"], a:2, c:"טכנולוגיה"},
+        {q:"מי הלחין את הסימפוניה התשיעית?", o:["מוצרט","באך","בטהובן","שופן"], a:2, c:"מוזיקה"},
+        {q:"מהי יחידת המידה לכוח?", o:["וואט","ג'אול","ניוטון","אמפר"], a:2, c:"מדע"},
+        {q:"באיזו מדינה נולד מוצרט?", o:["גרמניה","אוסטריה","איטליה","צרפת"], a:1, c:"מוזיקה"},
+        {q:"מה מייצג ה-DNA?", o:["חומצה דאוקסיריבונוקלאית","חומצה ריבונוקלאית","חלבון","שומן"], a:0, c:"מדע"},
+        {q:"מי כתב את 'מלחמה ושלום'?", o:["דוסטויבסקי","טולסטוי","צ'כוב","פושקין"], a:1, c:"ספרות"},
+        {q:"באיזו שנה הושקה האייפון הראשון?", o:["2005","2007","2009","2010"], a:1, c:"טכנולוגיה"},
+        {q:"מהו המספר האטומי של פחמן?", o:["4","6","8","12"], a:1, c:"מדע"},
+        {q:"מי צייר את 'הצעקה'?", o:["מונה","ואן גוך","מונק","פיקאסו"], a:2, c:"אמנות"},
+        {q:"מהי בירת אוסטרליה?", o:["סידני","מלבורן","קנברה","בריסביין"], a:2, c:"גיאוגרפיה"},
+        {q:"מי המציא את מכונת הדפוס?", o:["גוטנברג","דה וינצ'י","גלילאו","ניוטון"], a:0, c:"היסטוריה"},
+        {q:"מהו סוג המוזיקה שנולד בניו אורלינס?", o:["רוק","ג'אז","בלוז","קאנטרי"], a:1, c:"מוזיקה"}
+    ],
+    "16": [
+        {q:"מיהו הפילוסוף שאמר 'אני חושב, משמע אני קיים'?", o:["אריסטו","קאנט","דקארט","סוקרטס"], a:2, c:"פילוסופיה"},
+        {q:"מהו עקרון אי-הוודאות של הייזנברג?", o:["אי אפשר למדוד מהירות ומיקום בו-זמנית","אנרגיה שווה למסה","הכל יחסי","אור הוא גל"], a:0, c:"מדע"},
+        {q:"מי כתב את 'הון' (Das Kapital)?", o:["אדם סמית'","קארל מרקס","פרידריך ניטשה","מקס ובר"], a:1, c:"כלכלה"},
+        {q:"מהו תמ\"ג (GDP)?", o:["סכום כל החובות","תוצר מקומי גולמי","סכום היצוא","שער המטבע"], a:1, c:"כלכלה"},
+        {q:"מי היה הפילוסוף היווני שנידון למוות בשתיית רעל?", o:["אפלטון","אריסטו","סוקרטס","דמוקריטוס"], a:2, c:"פילוסופיה"},
+        {q:"מהי תורת היחסות הפרטית?", o:["עוסקת בכוח המשיכה","חוקי מהירות האור קבועים","עוסקת בחלקיקים קטנים","עוסקת באנטרופיה"], a:1, c:"מדע"},
+        {q:"מי ניסח את 'יד נעלמה' בכלכלה?", o:["קרל מרקס","ג'ון קיינס","אדם סמית'","מילטון פרידמן"], a:2, c:"כלכלה"},
+        {q:"מהו הקוגיטו של דקארט?", o:["הכל אשליה","אני חושב משמע אני קיים","אלוהים מת","האדם חופשי"], a:1, c:"פילוסופיה"},
+        {q:"מהו מספר אבוגדרו?", o:["3.14","6.022×10²³","9.8","2.998×10⁸"], a:1, c:"מדע"},
+        {q:"באיזו שנה התפרקה ברית המועצות?", o:["1989","1991","1993","1995"], a:1, c:"פוליטיקה"},
+        {q:"מי כתב 'מעבר לטוב ורע'?", o:["קאנט","הגל","ניטשה","שופנהאואר"], a:2, c:"פילוסופיה"},
+        {q:"מהו אינפלציה?", o:["ירידת מחירים","עליית מחירים לאורך זמן","עליית שכר","ירידת אבטלה"], a:1, c:"כלכלה"},
+        {q:"מהו החלקיק הבסיסי ביותר בגרעין האטום?", o:["אלקטרון","פרוטון ונויטרון","פוטון","קווארק"], a:3, c:"מדע"},
+        {q:"מי היה מנהיג המהפכה הצרפתית?", o:["נפוליאון","רובספייר","וולטר","רוסו"], a:1, c:"היסטוריה"},
+        {q:"מהו עיקרון הפרדת הרשויות?", o:["הפרדת דת ומדינה","חלוקה למחוקקת, מבצעת ושופטת","הפרדת צבא ומשטרה","חלוקת תקציב"], a:1, c:"פוליטיקה"},
+        {q:"מהי אנטרופיה?", o:["סדר מוחלט","מידת האי-סדר במערכת","סוג אנרגיה","כוח משיכה"], a:1, c:"מדע"},
+        {q:"מי כתב את 'לוויתן'?", o:["לוק","רוסו","הובס","מונטסקייה"], a:2, c:"פילוסופיה"},
+        {q:"מהו שער החליפין הצף?", o:["שער שנקבע ע\"י הממשלה","שער הנקבע ע\"י שוק חופשי","שער קבוע","שער שנקבע ע\"י הבנק"], a:1, c:"כלכלה"},
+        {q:"מהי תאוריית המיתרים?", o:["תאוריה מוזיקלית","חלקיקים הם מיתרים זעירים רוטטים","תאוריה כלכלית","תאוריה פסיכולוגית"], a:1, c:"מדע"},
+        {q:"מי היה אבי הדמוקרטיה?", o:["אריסטו","פריקלס","סוקרטס","קליסתנס"], a:3, c:"פוליטיקה"},
+        {q:"מהו האימפרטיב הקטגורי?", o:["חוק פיזיקלי","עיקרון מוסרי של קאנט","חוק כלכלי","תאוריה מתמטית"], a:1, c:"פילוסופיה"},
+        {q:"מהי מדינת הרווחה?", o:["מדינה עשירה","מדינה שמספקת שירותים סוציאליים","מדינה ללא מסים","מדינה קומוניסטית"], a:1, c:"פוליטיקה"},
+        {q:"מהו חור שחור?", o:["כוכב קטן","אזור שממנו אור לא יכול לברוח","חלל ריק","כוכב שבת"], a:1, c:"מדע"},
+        {q:"מי פיתח את תורת האבולוציה?", o:["ניוטון","דרווין","מנדל","פסטר"], a:1, c:"מדע"},
+        {q:"מהו ריבית דריבית?", o:["ריבית על הקרן בלבד","ריבית על קרן וריבית שנצברה","ריבית שלילית","ריבית של בנק מרכזי"], a:1, c:"כלכלה"},
+        {q:"מי כתב 'האמנה החברתית'?", o:["לוק","הובס","רוסו","וולטר"], a:2, c:"פילוסופיה"},
+        {q:"מהו הביג באנג?", o:["כוכב ענק","תאוריית התהוות היקום","סוג סופרנובה","כוח כבידה"], a:1, c:"מדע"},
+        {q:"מהי הזרם הכלכלי של קיינס?", o:["שוק חופשי מוחלט","התערבות ממשלתית בכלכלה","ביטול כסף","סחר חופשי בלבד"], a:1, c:"כלכלה"},
+        {q:"באיזו שנה הוכרז על מדינת ישראל?", o:["1947","1948","1949","1950"], a:1, c:"פוליטיקה"},
+        {q:"מהו הפרדוקס של זנון?", o:["הזמן עומד","תנועה בלתי אפשרית","החלל אינסופי","האור קבוע"], a:1, c:"פילוסופיה"}
+    ]
+};
+
+const ageConfig = {
+    "7": {label:"גיל 7+", emoji:"🦁", desc:"חיות, צבעים, טבע, סרטים", timer:15},
+    "10": {label:"גיל 10+", emoji:"🌍", desc:"גיאוגרפיה, היסטוריה, מדע, ספורט", timer:12},
+    "13": {label:"גיל 13+", emoji:"📚", desc:"היסטוריה עולמית, ספרות, טכנולוגיה, מוזיקה", timer:12},
+    "16": {label:"גיל 16+", emoji:"🧬", desc:"פילוסופיה, מדע מתקדם, פוליטיקה, כלכלה", timer:12}
+};
+
+// ===================== STATE =====================
+let currentAge = null;
+let currentRound = 0;
+let currentQuestionIndex = 0;
+let score = 0;
+let streak = 0;
+let maxStreak = 0;
+let totalTime = 0;
+let roundQuestions = [];
+let timerInterval = null;
+let timeLeft = 0;
+let answered = false;
+
+// ===================== SCREENS =====================
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function showHome() {
+    clearTimer();
+    currentAge = null;
+    showScreen('homeScreen');
+    renderAgeCards();
+}
+
+function showRounds() {
+    clearTimer();
+    showScreen('roundScreen');
+    renderRounds();
+}
+
+function showQuiz() {
+    showScreen('quizScreen');
+    loadQuestion();
+}
+
+function showSummary() {
+    clearTimer();
+    showScreen('summaryScreen');
+    renderSummary();
+}
+
+// ===================== HOME =====================
+function renderAgeCards() {
+    const grid = document.getElementById('ageGrid');
+    grid.innerHTML = '';
+    for (const [age, cfg] of Object.entries(ageConfig)) {
+        const best = getBestScore(age);
+        const card = document.createElement('div');
+        card.className = 'age-card';
+        card.onclick = () => { currentAge = age; showRounds(); };
+        card.innerHTML = `
+            <div class="age-card-emoji">${cfg.emoji}</div>
+            <div class="age-card-label">${cfg.label}</div>
+            <div class="age-card-desc">${cfg.desc}</div>
+            ${best !== null ? `<div class="age-card-best">שיא: ${best}/10</div>` : ''}
+        `;
+        grid.appendChild(card);
+    }
+}
+
+// ===================== ROUNDS =====================
+function renderRounds() {
+    document.getElementById('roundTitle').textContent = ageConfig[currentAge].label;
+    const grid = document.getElementById('roundGrid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'round-btn';
+        const saved = getRoundScore(currentAge, i);
+        btn.innerHTML = `${i}<span class="round-score">${saved !== null ? saved + '/10' : '-'}</span>`;
+        btn.onclick = () => startRound(i);
+        grid.appendChild(btn);
+    }
+}
+
+// ===================== QUIZ =====================
+function startRound(round) {
+    currentRound = round;
+    currentQuestionIndex = 0;
+    score = 0;
+    streak = 0;
+    maxStreak = 0;
+    totalTime = 0;
+    answered = false;
+
+    const questions = allQuestions[currentAge];
+    const startIdx = ((round - 1) * 10) % questions.length;
+    roundQuestions = [];
+    for (let i = 0; i < 10; i++) {
+        roundQuestions.push(questions[(startIdx + i) % questions.length]);
+    }
+    // Shuffle options display order per question (keep track of correct)
+    roundQuestions = roundQuestions.map(q => {
+        const indices = [0,1,2,3];
+        shuffleArray(indices);
+        return {
+            q: q.q,
+            o: indices.map(i => q.o[i]),
+            a: indices.indexOf(q.a),
+            c: q.c
+        };
+    });
+
+    showQuiz();
+}
+
+function loadQuestion() {
+    answered = false;
+    const q = roundQuestions[currentQuestionIndex];
+    document.getElementById('scoreBadge').textContent = `ניקוד: ${score}`;
+    updateStreak();
+    document.getElementById('progressLabel').textContent = `${currentQuestionIndex + 1} / 10`;
+    document.getElementById('progressBar').style.width = `${((currentQuestionIndex) / 10) * 100}%`;
+    document.getElementById('questionCategory').textContent = q.c;
+    document.getElementById('questionText').textContent = q.q;
+    document.getElementById('answerFeedback').textContent = '';
+    document.getElementById('answerFeedback').className = 'answer-feedback';
+
+    const grid = document.getElementById('optionsGrid');
+    grid.innerHTML = '';
+    q.o.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = opt;
+        btn.onclick = () => selectAnswer(idx);
+        grid.appendChild(btn);
+    });
+
+    startTimer();
+}
+
+function selectAnswer(idx) {
+    if (answered) return;
+    answered = true;
+    clearTimer();
+
+    const q = roundQuestions[currentQuestionIndex];
+    const timeUsed = ageConfig[currentAge].timer - timeLeft;
+    totalTime += timeUsed;
+
+    const buttons = document.querySelectorAll('.option-btn');
+    buttons.forEach((btn, i) => {
+        btn.classList.add('disabled');
+        if (i === q.a) btn.classList.add('correct');
+    });
+
+    const feedback = document.getElementById('answerFeedback');
+    if (idx === q.a) {
+        score++;
+        streak++;
+        if (streak > maxStreak) maxStreak = streak;
+        feedback.textContent = '✓ תשובה נכונה!';
+        feedback.className = 'answer-feedback feedback-correct';
+    } else {
+        streak = 0;
+        buttons[idx].classList.add('wrong');
+        feedback.textContent = `✗ התשובה הנכונה: ${q.o[q.a]}`;
+        feedback.className = 'answer-feedback feedback-wrong';
+    }
+
+    document.getElementById('scoreBadge').textContent = `ניקוד: ${score}`;
+    updateStreak();
+
+    setTimeout(() => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex >= 10) {
+            showSummary();
+        } else {
+            loadQuestion();
+        }
+    }, 1800);
+}
+
+function timeUp() {
+    if (answered) return;
+    answered = true;
+    clearTimer();
+    streak = 0;
+
+    const q = roundQuestions[currentQuestionIndex];
+    totalTime += ageConfig[currentAge].timer;
+
+    const buttons = document.querySelectorAll('.option-btn');
+    buttons.forEach((btn, i) => {
+        btn.classList.add('disabled');
+        if (i === q.a) btn.classList.add('correct');
+    });
+
+    const feedback = document.getElementById('answerFeedback');
+    feedback.textContent = `⏰ נגמר הזמן! התשובה: ${q.o[q.a]}`;
+    feedback.className = 'answer-feedback feedback-wrong';
+    updateStreak();
+
+    setTimeout(() => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex >= 10) {
+            showSummary();
+        } else {
+            loadQuestion();
+        }
+    }, 1800);
+}
+
+// ===================== TIMER =====================
+function startTimer() {
+    timeLeft = ageConfig[currentAge].timer;
+    const maxTime = timeLeft;
+    const circumference = 2 * Math.PI * 28; // r=28
+    const circle = document.getElementById('timerCircle');
+    const text = document.getElementById('timerText');
+
+    circle.style.strokeDasharray = circumference;
+    circle.style.strokeDashoffset = '0';
+    circle.classList.remove('warning');
+    text.textContent = timeLeft;
+
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        text.textContent = timeLeft;
+        const offset = circumference * (1 - timeLeft / maxTime);
+        circle.style.strokeDashoffset = offset;
+
+        if (timeLeft <= 5) circle.classList.add('warning');
+
+        if (timeLeft <= 0) {
+            clearTimer();
+            timeUp();
+        }
+    }, 1000);
+}
+
+function clearTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+// ===================== STREAK =====================
+function updateStreak() {
+    const badge = document.getElementById('streakBadge');
+    if (streak >= 2) {
+        badge.style.display = '';
+        badge.textContent = `🔥 ${streak}`;
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// ===================== SUMMARY =====================
+function renderSummary() {
+    const emoji = score === 10 ? '🏆' : score >= 7 ? '🌟' : score >= 4 ? '👍' : '💪';
+    document.getElementById('summaryEmoji').textContent = emoji;
+    document.getElementById('summaryScore').textContent = score;
+    document.getElementById('summaryStreak').textContent = maxStreak;
+    document.getElementById('summaryTime').textContent = (totalTime / 10).toFixed(1);
+
+    // Save score
+    const isNewBest = saveRoundScore(currentAge, currentRound, score);
+    const bestEl = document.getElementById('summaryBest');
+    bestEl.style.display = isNewBest ? '' : 'none';
+
+    // Next round button
+    const nextBtn = document.getElementById('nextRoundBtn');
+    if (currentRound < 10) {
+        nextBtn.style.display = '';
+        nextBtn.textContent = `סיבוב ${currentRound + 1}`;
+    } else {
+        nextBtn.style.display = 'none';
+    }
+
+    // Confetti on perfect score
+    if (score === 10) launchConfetti();
+}
+
+function nextRound() {
+    startRound(currentRound + 1);
+}
+
+function confirmQuit() {
+    if (confirm('בטוח שאתה רוצה לצאת? ההתקדמות בסיבוב הזה תאבד.')) {
+        clearTimer();
+        showRounds();
+    }
+}
+
+// ===================== LOCALSTORAGE =====================
+function getStorageKey(age, round) {
+    return `trivia_${age}_r${round}`;
+}
+
+function getRoundScore(age, round) {
+    const val = localStorage.getItem(getStorageKey(age, round));
+    return val !== null ? parseInt(val) : null;
+}
+
+function saveRoundScore(age, round, sc) {
+    const prev = getRoundScore(age, round);
+    const isNew = prev === null || sc > prev;
+    if (isNew) localStorage.setItem(getStorageKey(age, round), sc);
+    return isNew;
+}
+
+function getBestScore(age) {
+    let best = null;
+    for (let r = 1; r <= 10; r++) {
+        const s = getRoundScore(age, r);
+        if (s !== null && (best === null || s > best)) best = s;
+    }
+    return best;
+}
+
+// ===================== CONFETTI =====================
+function launchConfetti() {
+    const container = document.createElement('div');
+    container.className = 'confetti-container';
+    document.body.appendChild(container);
+
+    const colors = ['#4a90d9','#4caf50','#ff9800','#e53935','#9c27b0','#ffeb3b','#00bcd4'];
+    for (let i = 0; i < 80; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.width = (Math.random() * 8 + 6) + 'px';
+        piece.style.height = (Math.random() * 8 + 6) + 'px';
+        piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        piece.style.animationDelay = (Math.random() * 1.5) + 's';
+        container.appendChild(piece);
+    }
+    setTimeout(() => container.remove(), 5000);
+}
+
+// ===================== UTILS =====================
+function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+}
+
+// ===================== INIT =====================
+renderAgeCards();
+</script>
+</body>
+</html>

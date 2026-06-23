@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>איש תלוי - משחק איש תלוי בעברית</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #faf8f5; --surface: #ffffff; --text: #1a1a1a;
+            --text-secondary: #6b6b6b; --accent: #4a90d9; --border: #e0ddd8;
+            --green: #6aaa64; --red: #e74c3c; --gray: #787c7e;
+            --key-bg: #d3d6da; --success: #27ae60;
+        }
+        body { font-family: 'Rubik', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        /* Nav */
+        .game-nav { display: flex; justify-content: center; background: #1a1a1a; direction: ltr; flex-wrap: wrap; }
+        .game-nav-link { color: #999; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px 24px; letter-spacing: 0.5px; transition: all 0.2s; border-bottom: 2px solid transparent; font-family: 'Rubik', sans-serif; }
+        .game-nav-link:hover { color: #fff; }
+        .game-nav-link.active { color: #fff; border-bottom-color: #4a90d9; }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+        header { text-align: center; padding: 20px 0 10px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+        header h1 { font-size: 36px; font-weight: 800; }
+        header p { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+
+        .hidden { display: none !important; }
+
+        /* Home Screen */
+        .home-screen { text-align: center; }
+        .home-screen h2 { font-size: 20px; margin-bottom: 4px; }
+        .home-screen p.sub { color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
+        .age-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+        .age-card {
+            background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+            padding: 20px 12px; cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .age-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .age-card .age-icon { font-size: 32px; margin-bottom: 8px; }
+        .age-card h3 { font-size: 18px; margin-bottom: 4px; }
+        .age-card p { color: var(--text-secondary); font-size: 12px; }
+        .age-card .detail { font-size: 11px; color: var(--accent); font-weight: 600; margin-top: 8px; }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex; justify-content: center; gap: 24px; padding: 12px 0;
+            border-bottom: 1px solid var(--border); margin-bottom: 16px;
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 22px; font-weight: 700; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); }
+
+        /* Round Screen */
+        .round-screen { display: none; }
+        .round-screen.active { display: block; }
+        .round-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .back-btn { background: none; border: none; font-size: 16px; cursor: pointer; font-family: 'Rubik', sans-serif; font-weight: 600; color: var(--text); padding: 4px 8px; }
+        .back-btn:hover { color: var(--accent); }
+        .round-info { font-size: 14px; color: var(--text-secondary); }
+        .round-counter { font-size: 14px; font-weight: 600; color: var(--accent); }
+
+        /* Hangman SVG */
+        .hangman-area { display: flex; justify-content: center; margin: 8px 0; }
+        .hangman-svg { width: 180px; height: 200px; }
+        .hangman-svg line, .hangman-svg circle { stroke: var(--text); stroke-width: 3; stroke-linecap: round; fill: none; }
+        .hangman-svg .gallows { stroke: #bbb; stroke-width: 4; }
+        .hangman-part { opacity: 0; transition: opacity 0.4s ease; }
+        .hangman-part.visible { opacity: 1; }
+
+        /* Category hint */
+        .category-hint {
+            text-align: center; font-size: 15px; color: var(--accent); font-weight: 600;
+            margin: 8px 0; padding: 6px 16px; background: rgba(74,144,217,0.08);
+            border-radius: 20px; display: inline-block;
+        }
+        .category-wrapper { text-align: center; margin-bottom: 8px; }
+
+        /* Word display */
+        .word-display {
+            display: flex; justify-content: center; gap: 10px; margin: 16px 0;
+            direction: rtl; flex-wrap: wrap;
+        }
+        .letter-slot {
+            width: 44px; height: 52px; border-bottom: 3px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 700; transition: all 0.3s;
+        }
+        .letter-slot.revealed { border-bottom-color: var(--green); animation: popIn 0.3s ease; }
+        .letter-slot.wrong-reveal { border-bottom-color: var(--red); color: var(--red); }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* Guesses left */
+        .guesses-left {
+            text-align: center; font-size: 14px; color: var(--text-secondary); margin: 8px 0;
+        }
+        .guesses-left span { font-weight: 700; color: var(--text); }
+        .guesses-left.danger span { color: var(--red); }
+
+        /* Hebrew Keyboard */
+        .keyboard { display: flex; flex-direction: column; gap: 6px; align-items: center; margin-top: 12px; }
+        .kb-row { display: flex; gap: 4px; justify-content: center; direction: rtl; }
+        .kb-key {
+            min-width: 34px; height: 42px; border: none; border-radius: 6px;
+            background: var(--key-bg); color: var(--text); font-size: 18px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; font-family: 'Rubik', sans-serif;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .kb-key:hover:not(.used) { background: #bec2c6; transform: translateY(-1px); }
+        .kb-key.correct { background: var(--green); color: #fff; }
+        .kb-key.wrong { background: var(--red); color: #fff; opacity: 0.6; }
+        .kb-key.used { cursor: default; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; align-items: center;
+            justify-content: center; z-index: 100; opacity: 0;
+            transition: opacity 0.3s; pointer-events: none;
+        }
+        .modal-overlay.show { opacity: 1; pointer-events: all; }
+        .modal {
+            background: var(--surface); border-radius: 16px; padding: 32px;
+            text-align: center; max-width: 360px; width: 90%;
+            transform: scale(0.9); transition: transform 0.3s;
+        }
+        .modal-overlay.show .modal { transform: scale(1); }
+        .modal-icon { font-size: 48px; margin-bottom: 12px; }
+        .modal h2 { font-size: 24px; margin-bottom: 8px; }
+        .modal p { color: var(--text-secondary); font-size: 14px; margin-bottom: 6px; }
+        .modal .answer { font-size: 28px; font-weight: 700; color: var(--accent); margin: 12px 0; }
+        .modal-btn {
+            display: inline-block; padding: 12px 32px; border-radius: 8px;
+            border: none; font-size: 16px; font-weight: 600; cursor: pointer;
+            font-family: 'Rubik', sans-serif; transition: all 0.2s; margin-top: 12px;
+        }
+        .modal-btn.primary { background: var(--accent); color: #fff; }
+        .modal-btn.primary:hover { background: #3a7bc8; }
+        .modal-btn.secondary { background: var(--border); color: var(--text); margin-right: 8px; }
+        .modal-btn.secondary:hover { background: #d0cdc8; }
+
+        /* Shake animation */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        .shake { animation: shake 0.4s ease; }
+
+        /* Bounce for win */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-12px); }
+            60% { transform: translateY(-6px); }
+        }
+        .bounce { animation: bounce 0.5s ease; }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .game-nav-link { padding: 8px 12px; font-size: 11px; }
+            .letter-slot { width: 36px; height: 44px; font-size: 22px; }
+            .kb-key { min-width: 28px; height: 38px; font-size: 16px; }
+            .hangman-svg { width: 140px; height: 160px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="game-nav">
+        <a href="index.html" class="game-nav-link">Pips</a>
+        <a href="connections.html" class="game-nav-link">חיבורים</a>
+        <a href="kenken.html" class="game-nav-link">קנקן</a>
+        <a href="wordle.html" class="game-nav-link">מילים</a>
+        <a href="sudoku.html" class="game-nav-link">סודוקו</a>
+        <a href="2048.html" class="game-nav-link">2048</a>
+        <a href="memory.html" class="game-nav-link">מוקשים</a>
+        <a href="trivia.html" class="game-nav-link">טריוויה</a>
+        <a href="hangman.html" class="game-nav-link active">איש תלוי</a>
+        <a href="snake.html" class="game-nav-link">נחש</a>
+        <a href="connect4.html" class="game-nav-link">ארבע בשורה</a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>איש תלוי</h1>
+            <p>נחשו את המילה לפני שהאיש נתלה</p>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="statWords">0</div>
+                <div class="stat-label">מילים</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statStreak">0</div>
+                <div class="stat-label">רצף נוכחי</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statBest">0</div>
+                <div class="stat-label">רצף שיא</div>
+            </div>
+        </div>
+
+        <!-- Home Screen -->
+        <div class="home-screen" id="homeScreen">
+            <h2>בחרו רמת קושי</h2>
+            <p class="sub">8 סיבובים בכל רמה</p>
+            <div class="age-cards">
+                <div class="age-card" onclick="startGame('age7')">
+                    <div class="age-icon">🧒</div>
+                    <h3>גיל 7+</h3>
+                    <p>מילים קצרות וקלות</p>
+                    <div class="detail">3-4 אותיות · 8 ניחושים</div>
+                </div>
+                <div class="age-card" onclick="startGame('age10')">
+                    <div class="age-icon">👦</div>
+                    <h3>גיל 10+</h3>
+                    <p>מילים בינוניות</p>
+                    <div class="detail">4-5 אותיות · 7 ניחושים</div>
+                </div>
+                <div class="age-card" onclick="startGame('age13')">
+                    <div class="age-icon">🧑</div>
+                    <h3>גיל 13+</h3>
+                    <p>מילים ארוכות יותר</p>
+                    <div class="detail">5-7 אותיות · 6 ניחושים</div>
+                </div>
+                <div class="age-card" onclick="startGame('age16')">
+                    <div class="age-icon">🎓</div>
+                    <h3>גיל 16+</h3>
+                    <p>מילים מורכבות</p>
+                    <div class="detail">6-8 אותיות · 6 ניחושים</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Round Screen -->
+        <div class="round-screen" id="roundScreen">
+            <div class="round-header">
+                <button class="back-btn" onclick="goHome()">→ חזרה</button>
+                <div class="round-counter" id="roundCounter">סיבוב 1 מתוך 8</div>
+            </div>
+
+            <!-- Hangman Drawing -->
+            <div class="hangman-area">
+                <svg class="hangman-svg" viewBox="0 0 200 220">
+                    <!-- Gallows -->
+                    <line class="gallows" x1="20" y1="210" x2="180" y2="210"/>
+                    <line class="gallows" x1="60" y1="210" x2="60" y2="20"/>
+                    <line class="gallows" x1="60" y1="20" x2="130" y2="20"/>
+                    <line class="gallows" x1="130" y1="20" x2="130" y2="45"/>
+                    <!-- Head -->
+                    <circle class="hangman-part" id="hPart0" cx="130" cy="62" r="17"/>
+                    <!-- Body -->
+                    <line class="hangman-part" id="hPart1" x1="130" y1="79" x2="130" y2="130"/>
+                    <!-- Left Arm -->
+                    <line class="hangman-part" id="hPart2" x1="130" y1="95" x2="100" y2="120"/>
+                    <!-- Right Arm -->
+                    <line class="hangman-part" id="hPart3" x1="130" y1="95" x2="160" y2="120"/>
+                    <!-- Left Leg -->
+                    <line class="hangman-part" id="hPart4" x1="130" y1="130" x2="105" y2="170"/>
+                    <!-- Right Leg -->
+                    <line class="hangman-part" id="hPart5" x1="130" y1="130" x2="155" y2="170"/>
+                </svg>
+            </div>
+
+            <!-- Category -->
+            <div class="category-wrapper">
+                <span class="category-hint" id="categoryHint"></span>
+            </div>
+
+            <!-- Word Display -->
+            <div class="word-display" id="wordDisplay"></div>
+
+            <!-- Guesses Left -->
+            <div class="guesses-left" id="guessesLeft">ניחושים שגויים שנותרו: <span>6</span></div>
+
+            <!-- Keyboard -->
+            <div class="keyboard" id="keyboard"></div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-icon" id="modalIcon"></div>
+            <h2 id="modalTitle"></h2>
+            <p id="modalSubtitle"></p>
+            <div class="answer" id="modalAnswer"></div>
+            <div>
+                <button class="modal-btn secondary" onclick="goHome()" id="modalHomeBtn">תפריט ראשי</button>
+                <button class="modal-btn primary" onclick="nextRound()" id="modalNextBtn">הבא</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ====== WORD DATABASE ======
+    const WORDS = {
+        age7: [
+            { word: 'כלב', cat: 'חיה' }, { word: 'חתל', cat: 'חיה' }, { word: 'דג', cat: 'חיה' },
+            { word: 'ציפור', cat: 'חיה' }, { word: 'פרה', cat: 'חיה' }, { word: 'סוס', cat: 'חיה' },
+            { word: 'תפוח', cat: 'פרי' }, { word: 'בננה', cat: 'פרי' }, { word: 'ענב', cat: 'פרי' },
+            { word: 'אבטיח', cat: 'פרי' }, { word: 'תות', cat: 'פרי' }, { word: 'לימון', cat: 'פרי' },
+            { word: 'שמש', cat: 'טבע' }, { word: 'ירח', cat: 'טבע' }, { word: 'כוכב', cat: 'טבע' },
+            { word: 'ים', cat: 'טבע' }, { word: 'גשם', cat: 'טבע' }, { word: 'רוח', cat: 'טבע' },
+            { word: 'בית', cat: 'מקום' }, { word: 'גן', cat: 'מקום' }, { word: 'עיר', cat: 'מקום' },
+            { word: 'ספר', cat: 'חפץ' }, { word: 'כדור', cat: 'חפץ' }, { word: 'עט', cat: 'חפץ' },
+            { word: 'כיסא', cat: 'חפץ' }, { word: 'דלת', cat: 'חפץ' }, { word: 'חלון', cat: 'חפץ' },
+            { word: 'אמא', cat: 'משפחה' }, { word: 'אבא', cat: 'משפחה' }, { word: 'אח', cat: 'משפחה' },
+            { word: 'אחות', cat: 'משפחה' }, { word: 'סבא', cat: 'משפחה' }, { word: 'פרח', cat: 'טבע' },
+            { word: 'עץ', cat: 'טבע' }, { word: 'דבש', cat: 'אוכל' }, { word: 'לחם', cat: 'אוכל' }
+        ],
+        age10: [
+            { word: 'ארנב', cat: 'חיה' }, { word: 'נחש', cat: 'חיה' }, { word: 'דולפין', cat: 'חיה' },
+            { word: 'פנגווין', cat: 'חיה' }, { word: 'עכביש', cat: 'חיה' }, { word: 'צפרדע', cat: 'חיה' },
+            { word: 'תפוז', cat: 'פרי' }, { word: 'אננס', cat: 'פרי' }, { word: 'שזיף', cat: 'פרי' },
+            { word: 'אפרסק', cat: 'פרי' }, { word: 'קיווי', cat: 'פרי' }, { word: 'דובדבן', cat: 'פרי' },
+            { word: 'מטוס', cat: 'כלי תחבורה' }, { word: 'רכבת', cat: 'כלי תחבורה' }, { word: 'אוטובוס', cat: 'כלי תחבורה' },
+            { word: 'ספינה', cat: 'כלי תחבורה' }, { word: 'אופניים', cat: 'כלי תחבורה' },
+            { word: 'מורה', cat: 'מקצוע' }, { word: 'רופא', cat: 'מקצוע' }, { word: 'שוטר', cat: 'מקצוע' },
+            { word: 'טבח', cat: 'מקצוע' }, { word: 'נגר', cat: 'מקצוע' },
+            { word: 'כדורגל', cat: 'ספורט' }, { word: 'כדורסל', cat: 'ספורט' }, { word: 'שחיה', cat: 'ספורט' },
+            { word: 'גלידה', cat: 'אוכל' }, { word: 'שוקולד', cat: 'אוכל' }, { word: 'פיצה', cat: 'אוכל' },
+            { word: 'מחשב', cat: 'טכנולוגיה' }, { word: 'טלפון', cat: 'טכנולוגיה' },
+            { word: 'מדבר', cat: 'טבע' }, { word: 'הר', cat: 'טבע' }, { word: 'נהר', cat: 'טבע' },
+            { word: 'יער', cat: 'טבע' }, { word: 'אקדח', cat: 'חפץ' }, { word: 'גיטרה', cat: 'כלי נגינה' }
+        ],
+        age13: [
+            { word: 'פילוסוף', cat: 'מקצוע' }, { word: 'אסטרונאוט', cat: 'מקצוע' },
+            { word: 'מתכנת', cat: 'מקצוע' }, { word: 'עיתונאי', cat: 'מקצוע' },
+            { word: 'ירושלים', cat: 'עיר' }, { word: 'תלאביב', cat: 'עיר' },
+            { word: 'פריז', cat: 'עיר' }, { word: 'לונדון', cat: 'עיר' },
+            { word: 'דינוזאור', cat: 'חיה' }, { word: 'תנין', cat: 'חיה' },
+            { word: 'פנתר', cat: 'חיה' }, { word: 'קנגורו', cat: 'חיה' },
+            { word: 'פסנתר', cat: 'כלי נגינה' }, { word: 'חליל', cat: 'כלי נגינה' },
+            { word: 'כינור', cat: 'כלי נגינה' }, { word: 'תופים', cat: 'כלי נגינה' },
+            { word: 'מילון', cat: 'חפץ' }, { word: 'טלסקופ', cat: 'מכשיר' },
+            { word: 'מיקרוסקופ', cat: 'מכשיר' }, { word: 'אלגברה', cat: 'מתמטיקה' },
+            { word: 'גיאוגרפיה', cat: 'מקצוע לימוד' }, { word: 'ביולוגיה', cat: 'מקצוע לימוד' },
+            { word: 'כימיה', cat: 'מקצוע לימוד' }, { word: 'היסטוריה', cat: 'מקצוע לימוד' },
+            { word: 'פיראמידה', cat: 'מבנה' }, { word: 'אקווריום', cat: 'מקום' },
+            { word: 'אנציקלופדיה', cat: 'חפץ' }, { word: 'חשמל', cat: 'מדע' },
+            { word: 'כבידה', cat: 'מדע' }, { word: 'אוקיינוס', cat: 'טבע' },
+            { word: 'וולקן', cat: 'טבע' }, { word: 'טורנדו', cat: 'תופעת טבע' },
+            { word: 'שביט', cat: 'חלל' }, { word: 'גלקסיה', cat: 'חלל' }
+        ],
+        age16: [
+            { word: 'דמוקרטיה', cat: 'מושג' }, { word: 'קפיטליזם', cat: 'מושג' },
+            { word: 'פילוסופיה', cat: 'מקצוע לימוד' }, { word: 'פסיכולוגיה', cat: 'מקצוע לימוד' },
+            { word: 'אנתרופולוגיה', cat: 'מקצוע לימוד' }, { word: 'סוציולוגיה', cat: 'מקצוע לימוד' },
+            { word: 'ביורוקרטיה', cat: 'מושג' }, { word: 'אידיאולוגיה', cat: 'מושג' },
+            { word: 'אימפריאליזם', cat: 'מושג' }, { word: 'רנסנס', cat: 'תקופה' },
+            { word: 'רפורמציה', cat: 'תקופה' }, { word: 'רבולוציה', cat: 'מושג' },
+            { word: 'קונסטיטוציה', cat: 'מושג' }, { word: 'פרלמנט', cat: 'פוליטיקה' },
+            { word: 'דיפלומטיה', cat: 'פוליטיקה' }, { word: 'אסתטיקה', cat: 'פילוסופיה' },
+            { word: 'אפיסטמולוגיה', cat: 'פילוסופיה' }, { word: 'מטאפיזיקה', cat: 'פילוסופיה' },
+            { word: 'אינפלציה', cat: 'כלכלה' }, { word: 'פריבטיזציה', cat: 'כלכלה' },
+            { word: 'גלובליזציה', cat: 'כלכלה' }, { word: 'טכנולוגיה', cat: 'מדע' },
+            { word: 'אלגוריתם', cat: 'מדע המחשב' }, { word: 'קריפטוגרפיה', cat: 'מדע המחשב' },
+            { word: 'ביואטיקה', cat: 'מדע' }, { word: 'אקוסיסטם', cat: 'אקולוגיה' },
+            { word: 'פוטוסינתזה', cat: 'ביולוגיה' }, { word: 'כרומוזום', cat: 'ביולוגיה' },
+            { word: 'אנטיביוטיקה', cat: 'רפואה' }, { word: 'סימפוניה', cat: 'מוזיקה' },
+            { word: 'ארכיטקטורה', cat: 'אמנות' }, { word: 'אימפרסיוניזם', cat: 'אמנות' },
+            { word: 'סוריאליזם', cat: 'אמנות' }, { word: 'הומניזם', cat: 'פילוסופיה' }
+        ]
+    };
+
+    const DIFFICULTY = {
+        age7:  { maxWrong: 8, label: 'גיל 7+' },
+        age10: { maxWrong: 7, label: 'גיל 10+' },
+        age13: { maxWrong: 6, label: 'גיל 13+' },
+        age16: { maxWrong: 6, label: 'גיל 16+' }
+    };
+
+    const TOTAL_ROUNDS = 8;
+    const HEBREW_ROWS = [
+        ['ק','ר','א','ט','ו','ן','ם','פ'],
+        ['ש','ד','ג','כ','ע','י','ח','ל','ך','ף'],
+        ['ז','ס','ב','ה','נ','מ','צ','ת','ץ']
+    ];
+
+    // Map final forms to normal for matching
+    const FINAL_MAP = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };
+    const NORMAL_MAP = { 'כ': 'ך', 'מ': 'ם', 'נ': 'ן', 'פ': 'ף', 'צ': 'ץ' };
+
+    // ====== STATE ======
+    let currentDifficulty = null;
+    let currentRound = 0;
+    let currentWord = '';
+    let currentCategory = '';
+    let guessedLetters = new Set();
+    let wrongCount = 0;
+    let maxWrong = 6;
+    let gameOver = false;
+    let usedWords = [];
+    let roundWords = [];
+
+    // Stats
+    let stats = JSON.parse(localStorage.getItem('hangman_stats') || '{"words":0,"streak":0,"best":0}');
+
+    function saveStats() {
+        localStorage.setItem('hangman_stats', JSON.stringify(stats));
+        updateStatsUI();
+    }
+
+    function updateStatsUI() {
+        document.getElementById('statWords').textContent = stats.words;
+        document.getElementById('statStreak').textContent = stats.streak;
+        document.getElementById('statBest').textContent = stats.best;
+    }
+
+    // ====== NAVIGATION ======
+    function goHome() {
+        document.getElementById('homeScreen').classList.remove('hidden');
+        document.getElementById('roundScreen').classList.remove('active');
+        closeModal();
+        currentDifficulty = null;
+    }
+
+    function startGame(difficulty) {
+        currentDifficulty = difficulty;
+        currentRound = 0;
+        maxWrong = DIFFICULTY[difficulty].maxWrong;
+
+        // Pick 8 random words
+        const pool = [...WORDS[difficulty]];
+        roundWords = [];
+        for (let i = 0; i < TOTAL_ROUNDS && pool.length > 0; i++) {
+            const idx = Math.floor(Math.random() * pool.length);
+            roundWords.push(pool.splice(idx, 1)[0]);
+        }
+
+        document.getElementById('homeScreen').classList.add('hidden');
+        document.getElementById('roundScreen').classList.add('active');
+
+        startRound();
+    }
+
+    function startRound() {
+        const wordObj = roundWords[currentRound];
+        currentWord = wordObj.word;
+        currentCategory = wordObj.cat;
+        guessedLetters = new Set();
+        wrongCount = 0;
+        gameOver = false;
+
+        document.getElementById('roundCounter').textContent = `סיבוב ${currentRound + 1} מתוך ${TOTAL_ROUNDS}`;
+        document.getElementById('categoryHint').textContent = `רמז: ${currentCategory}`;
+
+        resetHangman();
+        renderWord();
+        renderKeyboard();
+        updateGuessesLeft();
+    }
+
+    // ====== HANGMAN SVG ======
+    function resetHangman() {
+        for (let i = 0; i < 6; i++) {
+            document.getElementById('hPart' + i).classList.remove('visible');
+        }
+    }
+
+    function showHangmanPart() {
+        // For age7 (8 guesses), we show parts at specific wrong counts
+        // For 6 guesses, one part per wrong guess
+        // For 7 guesses, first wrong shows nothing on body, then one per
+        const partsToShow = Math.min(5, Math.floor((wrongCount / maxWrong) * 6));
+        for (let i = 0; i <= partsToShow; i++) {
+            const el = document.getElementById('hPart' + i);
+            if (el) el.classList.add('visible');
+        }
+    }
+
+    // ====== WORD RENDERING ======
+    function normalizeForMatch(letter) {
+        return FINAL_MAP[letter] || letter;
+    }
+
+    function renderWord() {
+        const display = document.getElementById('wordDisplay');
+        display.innerHTML = '';
+        let allRevealed = true;
+
+        for (const letter of currentWord) {
+            const slot = document.createElement('div');
+            slot.className = 'letter-slot';
+            const normalized = normalizeForMatch(letter);
+
+            if (guessedLetters.has(normalized) || guessedLetters.has(letter)) {
+                slot.textContent = letter;
+                slot.classList.add('revealed');
+            } else {
+                allRevealed = false;
+                if (gameOver) {
+                    slot.textContent = letter;
+                    slot.classList.add('wrong-reveal');
+                }
+            }
+            display.appendChild(slot);
+        }
+
+        return allRevealed;
+    }
+
+    // ====== KEYBOARD ======
+    function renderKeyboard() {
+        const kb = document.getElementById('keyboard');
+        kb.innerHTML = '';
+
+        HEBREW_ROWS.forEach(row => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'kb-row';
+
+            row.forEach(letter => {
+                const key = document.createElement('button');
+                key.className = 'kb-key';
+                key.textContent = letter;
+                key.dataset.letter = letter;
+
+                const normalized = normalizeForMatch(letter);
+                if (guessedLetters.has(normalized) || guessedLetters.has(letter)) {
+                    key.classList.add('used');
+                    // Check if this letter (or its normalized form) is in the word
+                    const wordNormalized = [...currentWord].map(normalizeForMatch);
+                    if (wordNormalized.includes(normalized) || [...currentWord].includes(letter)) {
+                        key.classList.add('correct');
+                    } else {
+                        key.classList.add('wrong');
+                    }
+                }
+
+                key.addEventListener('click', () => handleGuess(letter));
+                rowDiv.appendChild(key);
+            });
+
+            kb.appendChild(rowDiv);
+        });
+    }
+
+    function updateGuessesLeft() {
+        const el = document.getElementById('guessesLeft');
+        const remaining = maxWrong - wrongCount;
+        el.innerHTML = `ניחושים שגויים שנותרו: <span>${remaining}</span>`;
+        el.className = remaining <= 2 ? 'guesses-left danger' : 'guesses-left';
+    }
+
+    // ====== GAME LOGIC ======
+    function handleGuess(letter) {
+        if (gameOver) return;
+
+        const normalized = normalizeForMatch(letter);
+        if (guessedLetters.has(normalized) || guessedLetters.has(letter)) return;
+
+        guessedLetters.add(letter);
+        guessedLetters.add(normalized);
+        // Also add the final form if we guessed the normal form
+        if (NORMAL_MAP[letter]) guessedLetters.add(NORMAL_MAP[letter]);
+
+        const wordLetters = [...currentWord].map(normalizeForMatch);
+        const isCorrect = wordLetters.includes(normalized) || [...currentWord].includes(letter);
+
+        if (!isCorrect) {
+            wrongCount++;
+            showHangmanPart();
+            updateGuessesLeft();
+            // Shake word display
+            const wd = document.getElementById('wordDisplay');
+            wd.classList.add('shake');
+            setTimeout(() => wd.classList.remove('shake'), 400);
+        }
+
+        renderKeyboard();
+        const allRevealed = renderWord();
+
+        // Check win
+        if (allRevealed) {
+            gameOver = true;
+            stats.words++;
+            stats.streak++;
+            if (stats.streak > stats.best) stats.best = stats.streak;
+            saveStats();
+
+            // Bounce animation on letters
+            setTimeout(() => {
+                document.querySelectorAll('.letter-slot').forEach((slot, i) => {
+                    setTimeout(() => slot.classList.add('bounce'), i * 100);
+                });
+            }, 200);
+
+            setTimeout(() => showModal(true), 800);
+            return;
+        }
+
+        // Check lose
+        if (wrongCount >= maxWrong) {
+            gameOver = true;
+            stats.streak = 0;
+            saveStats();
+            renderWord(); // Show unrevealed letters
+            setTimeout(() => showModal(false), 600);
+        }
+    }
+
+    // ====== PHYSICAL KEYBOARD ======
+    document.addEventListener('keydown', (e) => {
+        if (gameOver || !currentDifficulty || !document.getElementById('roundScreen').classList.contains('active')) return;
+        if (document.getElementById('modalOverlay').classList.contains('show')) return;
+
+        const hebrewLetters = 'קראטוןםפשדגכעיחלךףזסבהנמצתץ';
+        if (hebrewLetters.includes(e.key)) {
+            handleGuess(e.key);
+        }
+    });
+
+    // ====== MODAL ======
+    function showModal(won) {
+        const overlay = document.getElementById('modalOverlay');
+        document.getElementById('modalIcon').textContent = won ? '🎉' : '😢';
+        document.getElementById('modalTitle').textContent = won ? 'כל הכבוד!' : 'לא הצלחת הפעם';
+        document.getElementById('modalSubtitle').textContent = won
+            ? `ניחשת את המילה ב-${maxWrong - (maxWrong - wrongCount)} טעויות`
+            : 'המילה הייתה:';
+
+        if (won) {
+            document.getElementById('modalSubtitle').textContent = wrongCount === 0
+                ? 'ניחשת בלי אף טעות!'
+                : `ניחשת עם ${wrongCount} טעויות בלבד`;
+        }
+
+        document.getElementById('modalAnswer').textContent = currentWord;
+
+        const isLast = currentRound >= TOTAL_ROUNDS - 1;
+        const nextBtn = document.getElementById('modalNextBtn');
+        nextBtn.textContent = isLast ? 'סיום' : 'הבא →';
+        nextBtn.onclick = isLast ? () => { closeModal(); goHome(); } : nextRound;
+
+        overlay.classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('show');
+    }
+
+    function nextRound() {
+        closeModal();
+        currentRound++;
+        if (currentRound >= TOTAL_ROUNDS) {
+            goHome();
+            return;
+        }
+        startRound();
+    }
+
+    // ====== INIT ======
+    updateStatsUI();
+    </script>
+</body>
+</html>

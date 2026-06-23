@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ארבע בשורה - Connect 4</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #faf8f5; --surface: #ffffff; --text: #1a1a1a;
+            --text-secondary: #6b6b6b; --accent: #4a90d9; --border: #e0ddd8;
+            --board-blue: #2155a8; --board-blue-dark: #1a4488;
+            --red: #e74c3c; --yellow: #f1c40f;
+            --red-light: rgba(231, 76, 60, 0.35); --yellow-light: rgba(241, 196, 15, 0.35);
+        }
+        body { font-family: 'Rubik', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        /* Nav */
+        .game-nav { display: flex; justify-content: center; background: #1a1a1a; direction: ltr; flex-wrap: wrap; }
+        .game-nav-link { color: #999; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px 24px; letter-spacing: 0.5px; transition: all 0.2s; border-bottom: 2px solid transparent; font-family: 'Rubik', sans-serif; white-space: nowrap; }
+        .game-nav-link:hover { color: #fff; }
+        .game-nav-link.active { color: #fff; border-bottom-color: #4a90d9; }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+        header { text-align: center; padding: 20px 0 10px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+        header h1 { font-size: 36px; font-weight: 800; }
+        header p { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+
+        .hidden { display: none !important; }
+
+        /* Home Screen */
+        .home-screen { text-align: center; padding-top: 20px; }
+        .home-screen h2 { font-size: 22px; margin-bottom: 20px; font-weight: 700; }
+        .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 420px; margin: 0 auto; }
+        .mode-card {
+            background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+            padding: 24px 16px; cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .mode-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .mode-card .mode-icon { font-size: 36px; margin-bottom: 10px; }
+        .mode-card h3 { font-size: 17px; margin-bottom: 4px; font-weight: 600; }
+        .mode-card p { color: var(--text-secondary); font-size: 12px; }
+
+        /* Game Screen */
+        .game-screen { display: none; }
+        .game-screen.active { display: block; }
+
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+        .back-btn, .action-btn {
+            background: none; border: 2px solid var(--border); border-radius: 8px;
+            font-size: 13px; cursor: pointer; font-family: 'Rubik', sans-serif; font-weight: 600;
+            color: var(--text); padding: 6px 14px; transition: all 0.2s;
+        }
+        .back-btn:hover, .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .scoreboard {
+            display: flex; justify-content: center; align-items: center; gap: 24px;
+            margin-bottom: 16px; padding: 12px; background: var(--surface); border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .score-item { text-align: center; min-width: 80px; }
+        .score-item .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 2px; }
+        .score-item .value { font-size: 28px; font-weight: 800; }
+        .score-item.red .value { color: var(--red); }
+        .score-item.yellow .value { color: #d4a800; }
+        .score-divider { width: 1px; height: 40px; background: var(--border); }
+
+        .turn-indicator {
+            text-align: center; margin-bottom: 12px; font-size: 16px; font-weight: 600;
+            padding: 8px; border-radius: 8px; transition: all 0.3s;
+        }
+        .turn-indicator.red-turn { background: rgba(231, 76, 60, 0.1); color: var(--red); }
+        .turn-indicator.yellow-turn { background: rgba(241, 196, 15, 0.15); color: #b8960a; }
+
+        /* Board */
+        .board-area { display: flex; flex-direction: column; align-items: center; }
+
+        .hover-row {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+            width: calc(7 * 60px + 6 * 6px + 24px); padding: 0 12px;
+            height: 50px; margin-bottom: 4px;
+        }
+        .hover-cell {
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; transition: opacity 0.15s;
+        }
+        .hover-disc {
+            width: 44px; height: 44px; border-radius: 50%; opacity: 0; transition: opacity 0.15s;
+        }
+        .hover-disc.visible { opacity: 0.5; }
+        .hover-disc.red { background: var(--red); }
+        .hover-disc.yellow { background: var(--yellow); }
+
+        .board {
+            background: var(--board-blue);
+            border-radius: 12px; padding: 12px;
+            display: grid; grid-template-columns: repeat(7, 1fr);
+            gap: 6px; box-shadow: 0 8px 32px rgba(33, 85, 168, 0.3);
+            direction: ltr;
+        }
+        .cell {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: var(--bg); cursor: pointer;
+            position: relative; transition: background 0.1s;
+            overflow: hidden;
+        }
+        .cell:hover { background: #eee; }
+        .cell .disc {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%; transform: translateY(-500px);
+            transition: none;
+        }
+        .disc.red { background: radial-gradient(circle at 35% 35%, #ff6b5a, var(--red), #c0392b); box-shadow: inset 0 -3px 6px rgba(0,0,0,0.2); }
+        .disc.yellow { background: radial-gradient(circle at 35% 35%, #ffe66d, var(--yellow), #d4a800); box-shadow: inset 0 -3px 6px rgba(0,0,0,0.15); }
+
+        .disc.drop {
+            animation: dropDisc var(--drop-duration, 0.4s) cubic-bezier(0.25, 0.1, 0.25, 1.3) forwards;
+        }
+        @keyframes dropDisc {
+            0% { transform: translateY(-500px); }
+            100% { transform: translateY(0); }
+        }
+
+        .disc.win-pulse {
+            animation: pulse 0.8s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: inset 0 -3px 6px rgba(0,0,0,0.2); }
+            50% { transform: scale(1.08); box-shadow: inset 0 -3px 6px rgba(0,0,0,0.2), 0 0 16px rgba(255,255,255,0.6); }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--surface); border-radius: 16px; padding: 32px 40px;
+            text-align: center; max-width: 360px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal .result-icon { font-size: 56px; margin-bottom: 12px; }
+        .modal h2 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+        .modal p { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
+        .modal-buttons { display: flex; gap: 10px; justify-content: center; }
+        .modal-btn {
+            padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 600;
+            cursor: pointer; font-family: 'Rubik', sans-serif; border: 2px solid var(--border);
+            background: var(--surface); color: var(--text); transition: all 0.2s;
+        }
+        .modal-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .modal-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .modal-btn.primary:hover { background: #3a7bc8; }
+
+        /* Responsive */
+        @media (max-width: 520px) {
+            .cell { width: 44px; height: 44px; }
+            .hover-row { width: calc(7 * 44px + 6 * 6px + 24px); height: 40px; }
+            .hover-disc { width: 34px; height: 34px; }
+            .board { padding: 8px; gap: 4px; }
+            .hover-row { gap: 4px; padding: 0 8px; }
+            .mode-cards { grid-template-columns: 1fr; }
+            .game-nav-link { padding: 10px 14px; font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="game-nav">
+    <a href="index.html" class="game-nav-link">Pips</a>
+    <a href="connections.html" class="game-nav-link">חיבורים</a>
+    <a href="kenken.html" class="game-nav-link">קנקן</a>
+    <a href="wordle.html" class="game-nav-link">מילים</a>
+    <a href="sudoku.html" class="game-nav-link">סודוקו</a>
+    <a href="2048.html" class="game-nav-link">2048</a>
+    <a href="memory.html" class="game-nav-link">מוקשים</a>
+    <a href="trivia.html" class="game-nav-link">טריוויה</a>
+    <a href="hangman.html" class="game-nav-link">איש תלוי</a>
+    <a href="snake.html" class="game-nav-link">נחש</a>
+    <a href="connect4.html" class="game-nav-link active">ארבע בשורה</a>
+</nav>
+
+<div class="container">
+    <header>
+        <h1>🔴🟡 ארבע בשורה</h1>
+        <p>חבר ארבעה אסימונים ברצף כדי לנצח!</p>
+    </header>
+
+    <!-- Home Screen -->
+    <div id="homeScreen" class="home-screen">
+        <h2>בחר מצב משחק</h2>
+        <div class="mode-cards">
+            <div class="mode-card" onclick="startGame('friend')">
+                <div class="mode-icon">👫</div>
+                <h3>נגד חבר</h3>
+                <p>שני שחקנים על אותו מכשיר</p>
+            </div>
+            <div class="mode-card" onclick="startGame('easy')">
+                <div class="mode-icon">🤖</div>
+                <h3>AI קל</h3>
+                <p>מהלכים אקראיים</p>
+            </div>
+            <div class="mode-card" onclick="startGame('medium')">
+                <div class="mode-icon">🧠</div>
+                <h3>AI בינוני</h3>
+                <p>אסטרטגיה בסיסית</p>
+            </div>
+            <div class="mode-card" onclick="startGame('hard')">
+                <div class="mode-icon">💀</div>
+                <h3>AI קשה</h3>
+                <p>Minimax עם alpha-beta</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="game-screen">
+        <div class="toolbar">
+            <button class="back-btn" onclick="goHome()">→ חזרה</button>
+            <div class="toolbar-right">
+                <button class="action-btn" onclick="resetScores()">אפס ניקוד</button>
+                <button class="action-btn" onclick="newGame()">משחק חדש</button>
+            </div>
+        </div>
+
+        <div class="scoreboard">
+            <div class="score-item red">
+                <div class="label" id="p1Label">שחקן 1 🔴</div>
+                <div class="value" id="p1Score">0</div>
+            </div>
+            <div class="score-divider"></div>
+            <div class="score-item yellow">
+                <div class="label" id="p2Label">שחקן 2 🟡</div>
+                <div class="value" id="p2Score">0</div>
+            </div>
+        </div>
+
+        <div class="turn-indicator red-turn" id="turnIndicator">תור שחקן 1 🔴</div>
+
+        <div class="board-area">
+            <div class="hover-row" id="hoverRow"></div>
+            <div class="board" id="board"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <div class="result-icon" id="modalIcon">🎉</div>
+        <h2 id="modalTitle">ניצחון!</h2>
+        <p id="modalText">שחקן 1 ניצח!</p>
+        <div class="modal-buttons">
+            <button class="modal-btn" onclick="goHome()">תפריט ראשי</button>
+            <button class="modal-btn primary" onclick="newGame(); closeModal();">משחק חדש</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const ROWS = 6, COLS = 7;
+let board, currentPlayer, gameOver, gameMode, scores, animating;
+
+function init() {
+    board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+    currentPlayer = 1;
+    gameOver = false;
+    animating = false;
+    renderBoard();
+    renderHoverRow();
+    updateTurnIndicator();
+}
+
+function startGame(mode) {
+    gameMode = mode;
+    scores = scores || {1: 0, 2: 0};
+    document.getElementById('homeScreen').classList.add('hidden');
+    const gs = document.getElementById('gameScreen');
+    gs.classList.add('active');
+    gs.style.display = 'block';
+
+    const isAI = mode !== 'friend';
+    document.getElementById('p1Label').textContent = 'שחקן 1 🔴';
+    document.getElementById('p2Label').textContent = isAI ? 'מחשב 🟡' : 'שחקן 2 🟡';
+    document.getElementById('p1Score').textContent = scores[1];
+    document.getElementById('p2Score').textContent = scores[2];
+    init();
+}
+
+function goHome() {
+    closeModal();
+    document.getElementById('homeScreen').classList.remove('hidden');
+    const gs = document.getElementById('gameScreen');
+    gs.classList.remove('active');
+    gs.style.display = 'none';
+}
+
+function newGame() { init(); }
+
+function resetScores() {
+    scores = {1: 0, 2: 0};
+    document.getElementById('p1Score').textContent = '0';
+    document.getElementById('p2Score').textContent = '0';
+}
+
+function renderBoard() {
+    const el = document.getElementById('board');
+    el.innerHTML = '';
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+            cell.addEventListener('click', () => onCellClick(c));
+            cell.addEventListener('mouseenter', () => showHover(c));
+            cell.addEventListener('mouseleave', hideHover);
+            el.appendChild(cell);
+        }
+    }
+}
+
+function renderHoverRow() {
+    const el = document.getElementById('hoverRow');
+    el.innerHTML = '';
+    for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'hover-cell';
+        const disc = document.createElement('div');
+        disc.className = 'hover-disc';
+        disc.id = 'hover-' + c;
+        cell.appendChild(disc);
+        cell.addEventListener('mouseenter', () => showHover(c));
+        cell.addEventListener('mouseleave', hideHover);
+        cell.addEventListener('click', () => onCellClick(c));
+        el.appendChild(cell);
+    }
+}
+
+function showHover(col) {
+    if (gameOver || animating) return;
+    hideHover();
+    const el = document.getElementById('hover-' + col);
+    if (!el) return;
+    if (getAvailableRow(col) === -1) return;
+    el.className = 'hover-disc visible ' + (currentPlayer === 1 ? 'red' : 'yellow');
+}
+
+function hideHover() {
+    for (let c = 0; c < COLS; c++) {
+        const el = document.getElementById('hover-' + c);
+        if (el) el.className = 'hover-disc';
+    }
+}
+
+function getAvailableRow(col) {
+    for (let r = ROWS - 1; r >= 0; r--) {
+        if (board[r][col] === 0) return r;
+    }
+    return -1;
+}
+
+function onCellClick(col) {
+    if (gameOver || animating) return;
+    if (gameMode !== 'friend' && currentPlayer === 2) return;
+    dropDisc(col);
+}
+
+function dropDisc(col) {
+    const row = getAvailableRow(col);
+    if (row === -1) return false;
+
+    board[row][col] = currentPlayer;
+    animating = true;
+    hideHover();
+
+    const cellIndex = row * COLS + col;
+    const cell = document.getElementById('board').children[cellIndex];
+    const disc = document.createElement('div');
+    disc.className = 'disc ' + (currentPlayer === 1 ? 'red' : 'yellow');
+
+    const duration = 0.15 + row * 0.06;
+    disc.style.setProperty('--drop-duration', duration + 's');
+
+    requestAnimationFrame(() => {
+        disc.classList.add('drop');
+        cell.appendChild(disc);
+    });
+
+    setTimeout(() => {
+        animating = false;
+        const winCells = checkWin(row, col, currentPlayer);
+        if (winCells) {
+            gameOver = true;
+            highlightWin(winCells);
+            scores[currentPlayer]++;
+            document.getElementById('p1Score').textContent = scores[1];
+            document.getElementById('p2Score').textContent = scores[2];
+            const winner = currentPlayer === 1 ? 'שחקן 1 🔴' : (gameMode === 'friend' ? 'שחקן 2 🟡' : 'המחשב 🟡');
+            showModal('🎉', 'ניצחון!', winner + ' ניצח!');
+            return;
+        }
+        if (isBoardFull()) {
+            gameOver = true;
+            showModal('🤝', 'תיקו!', 'הלוח מלא - אין מנצח');
+            return;
+        }
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+        updateTurnIndicator();
+
+        if (gameMode !== 'friend' && currentPlayer === 2) {
+            setTimeout(aiMove, 350);
+        }
+    }, duration * 1000 + 50);
+
+    return true;
+}
+
+function checkWin(row, col, player) {
+    const directions = [[0,1],[1,0],[1,1],[1,-1]];
+    for (const [dr, dc] of directions) {
+        let cells = [[row, col]];
+        for (let dir = -1; dir <= 1; dir += 2) {
+            for (let i = 1; i <= 3; i++) {
+                const r = row + dr * i * dir, c = col + dc * i * dir;
+                if (r < 0 || r >= ROWS || c < 0 || c >= COLS || board[r][c] !== player) break;
+                cells.push([r, c]);
+            }
+        }
+        if (cells.length >= 4) return cells;
+    }
+    return null;
+}
+
+function checkWinFull(player) {
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            if (board[r][c] === player) {
+                const w = checkWin(r, c, player);
+                if (w) return w;
+            }
+        }
+    }
+    return null;
+}
+
+function highlightWin(cells) {
+    for (const [r, c] of cells) {
+        const idx = r * COLS + c;
+        const cell = document.getElementById('board').children[idx];
+        const disc = cell.querySelector('.disc');
+        if (disc) disc.classList.add('win-pulse');
+    }
+}
+
+function isBoardFull() {
+    return board[0].every(cell => cell !== 0);
+}
+
+function updateTurnIndicator() {
+    const el = document.getElementById('turnIndicator');
+    if (currentPlayer === 1) {
+        el.textContent = 'תור שחקן 1 🔴';
+        el.className = 'turn-indicator red-turn';
+    } else {
+        const name = gameMode === 'friend' ? 'שחקן 2' : 'המחשב';
+        el.textContent = 'תור ' + name + ' 🟡';
+        el.className = 'turn-indicator yellow-turn';
+    }
+}
+
+function showModal(icon, title, text) {
+    document.getElementById('modalIcon').textContent = icon;
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalText').textContent = text;
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
+/* ========== AI ========== */
+
+function getValidCols() {
+    const cols = [];
+    for (let c = 0; c < COLS; c++) {
+        if (board[0][c] === 0) cols.push(c);
+    }
+    return cols;
+}
+
+function aiMove() {
+    if (gameOver) return;
+    let col;
+    if (gameMode === 'easy') col = aiEasy();
+    else if (gameMode === 'medium') col = aiMedium();
+    else col = aiHard();
+    dropDisc(col);
+}
+
+function aiEasy() {
+    const valid = getValidCols();
+    return valid[Math.floor(Math.random() * valid.length)];
+}
+
+function aiMedium() {
+    const valid = getValidCols();
+
+    // 1. Win if possible
+    for (const c of valid) {
+        const r = getAvailableRow(c);
+        board[r][c] = 2;
+        if (checkWin(r, c, 2)) { board[r][c] = 0; return c; }
+        board[r][c] = 0;
+    }
+
+    // 2. Block opponent win
+    for (const c of valid) {
+        const r = getAvailableRow(c);
+        board[r][c] = 1;
+        if (checkWin(r, c, 1)) { board[r][c] = 0; return c; }
+        board[r][c] = 0;
+    }
+
+    // 3. Don't give opponent a win above
+    const safe = valid.filter(c => {
+        const r = getAvailableRow(c);
+        if (r <= 0) return true;
+        board[r][c] = 2;
+        board[r-1][c] = 1;
+        const bad = checkWin(r-1, c, 1);
+        board[r][c] = 0;
+        board[r-1][c] = 0;
+        return !bad;
+    });
+
+    const pool = safe.length > 0 ? safe : valid;
+
+    // 4. Prefer center
+    const centerOrder = [3, 2, 4, 1, 5, 0, 6];
+    for (const c of centerOrder) {
+        if (pool.includes(c)) return c;
+    }
+    return pool[0];
+}
+
+/* Minimax with alpha-beta pruning */
+function aiHard() {
+    const valid = getValidCols();
+    if (valid.length === 0) return -1;
+
+    // First move: always center
+    if (board.flat().every(c => c === 0)) return 3;
+
+    let bestScore = -Infinity;
+    let bestCol = valid[0];
+    const depth = valid.length <= 5 ? 7 : 6;
+
+    // Order columns center-first for better pruning
+    const ordered = [...valid].sort((a, b) => Math.abs(a - 3) - Math.abs(b - 3));
+
+    for (const c of ordered) {
+        const r = getAvailableRow(c);
+        board[r][c] = 2;
+        const score = minimax(depth - 1, -Infinity, Infinity, false);
+        board[r][c] = 0;
+        if (score > bestScore) {
+            bestScore = score;
+            bestCol = c;
+        }
+    }
+    return bestCol;
+}
+
+function minimax(depth, alpha, beta, isMaximizing) {
+    // Terminal checks
+    if (checkWinFull(2)) return 100000 + depth;
+    if (checkWinFull(1)) return -100000 - depth;
+    if (isBoardFull()) return 0;
+    if (depth === 0) return evaluate();
+
+    const valid = getValidCols();
+    const ordered = [...valid].sort((a, b) => Math.abs(a - 3) - Math.abs(b - 3));
+
+    if (isMaximizing) {
+        let maxEval = -Infinity;
+        for (const c of ordered) {
+            const r = getAvailableRow(c);
+            board[r][c] = 2;
+            const val = minimax(depth - 1, alpha, beta, false);
+            board[r][c] = 0;
+            maxEval = Math.max(maxEval, val);
+            alpha = Math.max(alpha, val);
+            if (beta <= alpha) break;
+        }
+        return maxEval;
+    } else {
+        let minEval = Infinity;
+        for (const c of ordered) {
+            const r = getAvailableRow(c);
+            board[r][c] = 1;
+            const val = minimax(depth - 1, alpha, beta, true);
+            board[r][c] = 0;
+            minEval = Math.min(minEval, val);
+            beta = Math.min(beta, val);
+            if (beta <= alpha) break;
+        }
+        return minEval;
+    }
+}
+
+function evaluate() {
+    let score = 0;
+
+    // Center column preference
+    for (let r = 0; r < ROWS; r++) {
+        if (board[r][3] === 2) score += 3;
+        else if (board[r][3] === 1) score -= 3;
+    }
+
+    // Evaluate all windows of 4
+    // Horizontal
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c <= COLS - 4; c++) {
+            score += evalWindow(board[r][c], board[r][c+1], board[r][c+2], board[r][c+3]);
+        }
+    }
+    // Vertical
+    for (let c = 0; c < COLS; c++) {
+        for (let r = 0; r <= ROWS - 4; r++) {
+            score += evalWindow(board[r][c], board[r+1][c], board[r+2][c], board[r+3][c]);
+        }
+    }
+    // Diagonal down-right
+    for (let r = 0; r <= ROWS - 4; r++) {
+        for (let c = 0; c <= COLS - 4; c++) {
+            score += evalWindow(board[r][c], board[r+1][c+1], board[r+2][c+2], board[r+3][c+3]);
+        }
+    }
+    // Diagonal down-left
+    for (let r = 0; r <= ROWS - 4; r++) {
+        for (let c = 3; c < COLS; c++) {
+            score += evalWindow(board[r][c], board[r+1][c-1], board[r+2][c-2], board[r+3][c-3]);
+        }
+    }
+    return score;
+}
+
+function evalWindow(a, b, c, d) {
+    const cells = [a, b, c, d];
+    const ai = cells.filter(x => x === 2).length;
+    const human = cells.filter(x => x === 1).length;
+    const empty = cells.filter(x => x === 0).length;
+
+    if (ai === 4) return 100;
+    if (human === 4) return -100;
+    if (ai === 3 && empty === 1) return 10;
+    if (human === 3 && empty === 1) return -12;
+    if (ai === 2 && empty === 2) return 3;
+    if (human === 2 && empty === 2) return -4;
+    return 0;
+}
+
+// Close modal on overlay click
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
